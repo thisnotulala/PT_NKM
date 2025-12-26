@@ -17,4 +17,11 @@ class Sdm extends Model
         'nomor_telepon',
         'alamat',
     ];
+
+    public function projects()
+    {
+        return $this->belongsToMany(\App\Models\Project::class, 'project_sdm')
+            ->withTimestamps();
+    }
+
 }

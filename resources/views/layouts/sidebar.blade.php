@@ -52,6 +52,14 @@
                     <p>Equipment</p>
                 </a>
                 </li>
+                <li class="nav-item">
+                <a href="{{ route('project.index') }}"
+                    class="nav-link {{ request()->is('project*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-project-diagram"></i>
+                    <p>Proyek</p>
+                </a>
+                </li>
+
             </ul>
         </nav>
     </div>
