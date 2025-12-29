@@ -53,6 +53,20 @@
           </small>
         @endif
       </div>
+      
+      <div class="form-group mt-3">
+        <label>Upload RAB (PDF / Excel)</label>
+        <input type="file" name="rab" class="form-control"
+              accept="application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+
+        @if($project->rab_path)
+          <small class="text-muted d-block mt-1">
+            RAB saat ini:
+            <a href="{{ asset('storage/'.$project->rab_path) }}" target="_blank">Lihat</a>
+          </small>
+        @endif
+      </div>
+
 
       <hr>
       <div class="d-flex align-items-center justify-content-between">

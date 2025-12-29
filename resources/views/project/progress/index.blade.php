@@ -51,18 +51,14 @@
             @endif
           </td>
           <td class="text-center">
-
-            @if($ph->progress >= 100)
-              <button class="btn btn-sm btn-secondary" disabled>
-                Selesai
-              </button>
+            @if((int)$ph->progress >= 100)
+              <span class="badge badge-success">Selesai</span>
             @else
               <a href="{{ route('project.progress.create', [$project->id, $ph->id]) }}"
-                 class="btn btn-sm btn-maroon">
+                class="btn btn-sm btn-maroon">
                 Update Progress
               </a>
             @endif
-
           </td>
         </tr>
         @endforeach

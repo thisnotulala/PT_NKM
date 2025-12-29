@@ -73,9 +73,19 @@ class ProjectController extends Controller
 
     public function show(Project $project)
     {
-        $project->load(['client', 'phases']);
-        return view('project.show', compact('project'));
+        // load detail proyek + tahapan + SDM yang ditugaskan
+        $project->load([
+            'client',
+            'phases',
+            'projectSdms.sdm'
+        ]);
+
+        // list master SDM untuk dropdown "Tambah SDM"
+        $sdms = \App\Models\Sdm::orderBy('nama')->get();
+
+        return view('project.show', compact('project', 'sdms'));
     }
+
 
     public function edit(Project $project)
     {
@@ -92,7 +102,7 @@ class ProjectController extends Controller
             'tanggal_mulai'   => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'dokumen'         => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg|max:5120',
-
+            'rab'             => 'nullable|file|mimes:pdf,xls,xlsx|max:5120',
             'tahapan'                => 'required|array|min:1',
             'tahapan.*.nama_tahapan' => 'required|string|max:255',
             'tahapan.*.persen'       => 'required|integer|min:0|max:100',
@@ -113,6 +123,15 @@ class ProjectController extends Controller
                 }
                 $project->dokumen = $request->file('dokumen')->store('dokumen_proyek', 'public');
             }
+
+             // ✅ tambahan: update RAB (kalau upload baru)
+            if ($request->hasFile('rab')) {
+                if ($project->rab_path && Storage::disk('public')->exists($project->rab_path)) {
+                    Storage::disk('public')->delete($project->rab_path);
+                }
+                $project->rab_path = $request->file('rab')->store('rab_proyek', 'public');
+            }
+
 
             $project->nama_proyek = $data['nama_proyek'];
             $project->client_id = $data['client_id'];
@@ -141,6 +160,11 @@ class ProjectController extends Controller
         if ($project->dokumen && Storage::disk('public')->exists($project->dokumen)) {
             Storage::disk('public')->delete($project->dokumen);
         }
+
+        if ($project->rab_path && Storage::disk('public')->exists($project->rab_path)) {
+            Storage::disk('public')->delete($project->rab_path);
+        }
+        
         $project->delete();
 
         return redirect()->route('project.index')->with('success', 'Proyek berhasil dihapus.');

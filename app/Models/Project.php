@@ -12,6 +12,7 @@ class Project extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'dokumen',
+        'rab_path'
     ];
 
     public function client()
@@ -42,5 +43,15 @@ class Project extends Model
     {
         return $this->hasMany(\App\Models\ProjectPhaseProgressLog::class);
     }
+
+    public function projectSdms()
+    {
+        return $this->hasMany(\App\Models\ProjectSdm::class);
+    }
+    public function expenses()
+    {
+        return $this->hasMany(\App\Models\ProjectExpense::class);
+    }
+
 
 }

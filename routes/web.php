@@ -11,6 +11,8 @@ use App\Http\Controllers\ProjectPhaseScheduleController;
 use App\Http\Controllers\ProjectScheduleGenerateController;
 use App\Http\Controllers\EquipmentLoanController;
 use App\Http\Controllers\ProjectProgressController;
+use App\Http\Controllers\ProjectSdmController;
+use App\Http\Controllers\ProjectExpenseController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -44,6 +46,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/sdm/{sdm}/edit', [SdmController::class, 'edit'])->name('sdm.edit');
     Route::put('/sdm/{sdm}', [SdmController::class, 'update'])->name('sdm.update');
     Route::delete('/sdm/{sdm}', [SdmController::class, 'destroy'])->name('sdm.destroy');
+
+    //PENUGASAN SDM
+    Route::post('/project/{project}/sdm', [ProjectSdmController::class, 'store'])
+        ->name('project.sdm.store');
+
+    Route::delete('/project/{project}/sdm/{assignment}', [ProjectSdmController::class, 'destroy'])
+        ->name('project.sdm.destroy');
 
     // SATUAN
     Route::get('/satuan', [SatuanController::class, 'index'])->name('satuan.index');
@@ -103,6 +112,8 @@ Route::middleware('auth')->group(function () {
         ->name('project.jadwal.generate.run');
 
     // PROGRESS
+    Route::get('/progress-proyek', [ProjectProgressController::class, 'pickProject'])
+        ->name('project.progress.pick');
     Route::get('/project/{project}/progress', [ProjectProgressController::class, 'index'])
         ->name('project.progress.index');
 
@@ -111,6 +122,17 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/project/{project}/phase/{phase}/progress', [ProjectProgressController::class, 'store'])
         ->name('project.progress.store');
+
+
+    //PROJECT EXPENSES
+    Route::get('/project/{project}/expenses', [ProjectExpenseController::class, 'index'])->name('project.expenses.index');
+    Route::get('/project/{project}/expenses/create', [ProjectExpenseController::class, 'create'])->name('project.expenses.create');
+    Route::post('/project/{project}/expenses', [ProjectExpenseController::class, 'store'])->name('project.expenses.store');
+    Route::get('/project/{project}/expenses/{expense}/edit', [ProjectExpenseController::class, 'edit'])->name('project.expenses.edit');
+    Route::put('/project/{project}/expenses/{expense}', [ProjectExpenseController::class, 'update'])->name('project.expenses.update');
+    Route::delete('/project/{project}/expenses/{expense}', [ProjectExpenseController::class, 'destroy'])->name('project.expenses.destroy');
+    Route::get('/pengeluaran-proyek', [\App\Http\Controllers\ProjectExpenseController::class, 'pickProject'])
+        ->name('project.expenses.pick');
 
     
 

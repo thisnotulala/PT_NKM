@@ -103,4 +103,13 @@ class ProjectProgressController extends Controller
         return redirect()->route('project.progress.index', $project->id)
             ->with('success', 'Progress tahap berhasil disimpan.');
     }
+
+    public function pickProject()
+    {
+        $projects = \App\Models\Project::with('client')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('project.progress.pick', compact('projects'));
+    }
 }

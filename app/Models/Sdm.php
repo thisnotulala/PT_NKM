@@ -23,5 +23,10 @@ class Sdm extends Model
         return $this->belongsToMany(\App\Models\Project::class, 'project_sdm')
             ->withTimestamps();
     }
+    public function projectSdms()
+    {
+        return $this->hasMany(\App\Models\ProjectSdm::class);
+    }
+
 
 }
