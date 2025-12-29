@@ -11,10 +11,23 @@ class ProjectPhase extends Model
         'nama_tahapan',
         'persen',
         'urutan',
+        'progress',
+        'last_progress_at',
     ];
 
     public function project()
     {
         return $this->belongsTo(Project::class);
     }
+
+    public function schedule()
+    {
+        return $this->hasOne(\App\Models\ProjectPhaseSchedule::class, 'project_phase_id');
+    }
+
+    public function progressLogs()
+    {
+        return $this->hasMany(\App\Models\ProjectPhaseProgressLog::class, 'project_phase_id');
+    }
+
 }

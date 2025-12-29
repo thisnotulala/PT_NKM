@@ -19,4 +19,10 @@ class Equipment extends Model
     {
         return $this->belongsTo(Satuan::class);
     }
+    
+    public function loanItems()
+    {
+        return $this->hasMany(\App\Models\EquipmentLoanItem::class);
+    }
+
 }

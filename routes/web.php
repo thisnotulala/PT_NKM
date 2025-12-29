@@ -7,6 +7,10 @@ use App\Http\Controllers\SdmController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\EquipmentController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectPhaseScheduleController;
+use App\Http\Controllers\ProjectScheduleGenerateController;
+use App\Http\Controllers\EquipmentLoanController;
+use App\Http\Controllers\ProjectProgressController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -64,5 +68,50 @@ Route::middleware('auth')->group(function () {
     Route::get('/project/{project}/edit', [ProjectController::class, 'edit'])->name('project.edit');
     Route::put('/project/{project}', [ProjectController::class, 'update'])->name('project.update');
     Route::delete('/project/{project}', [ProjectController::class, 'destroy'])->name('project.destroy');
+
+    //EQUIPMENT LOAN
+    Route::get('/equipment-loans', [EquipmentLoanController::class, 'index'])->name('equipment_loans.index');
+    Route::get('/equipment-loans/create', [EquipmentLoanController::class, 'create'])->name('equipment_loans.create');
+    Route::post('/equipment-loans', [EquipmentLoanController::class, 'store'])->name('equipment_loans.store');
+
+    Route::get('/equipment-loans/{loan}', [EquipmentLoanController::class, 'show'])->name('equipment_loans.show');
+
+    Route::post('/equipment-loans/{loan}/approve', [EquipmentLoanController::class, 'approve'])->name('equipment_loans.approve');
+    Route::post('/equipment-loans/{loan}/reject', [EquipmentLoanController::class, 'reject'])->name('equipment_loans.reject');
+
+    Route::get('/equipment-loans/{loan}/return', [EquipmentLoanController::class, 'returnForm'])->name('equipment_loans.return.form');
+    Route::post('/equipment-loans/{loan}/return', [EquipmentLoanController::class, 'returnStore'])->name('equipment_loans.return.store');
+
+
+    //SCHEDULE
+    Route::get('/jadwal', [ProjectPhaseScheduleController::class, 'index'])->name('jadwal.index');
+    Route::get('/jadwal/create', [ProjectPhaseScheduleController::class, 'create'])->name('jadwal.create');
+    Route::post('/jadwal', [ProjectPhaseScheduleController::class, 'store'])->name('jadwal.store');
+
+    Route::get('/jadwal/{schedule}/edit', [ProjectPhaseScheduleController::class, 'edit'])->name('jadwal.edit');
+    Route::put('/jadwal/{schedule}', [ProjectPhaseScheduleController::class, 'update'])->name('jadwal.update');
+    Route::delete('/jadwal/{schedule}', [ProjectPhaseScheduleController::class, 'destroy'])->name('jadwal.destroy');
+
+    // ajax ambil tahapan berdasarkan proyek
+    Route::get('/jadwal/phases/{project}', [ProjectPhaseScheduleController::class, 'phasesByProject'])
+        ->name('jadwal.phases');
+
+    Route::get('/project/{project}/jadwal/generate', [ProjectScheduleGenerateController::class, 'form'])
+        ->name('project.jadwal.generate.form');
+
+    Route::post('/project/{project}/jadwal/generate', [ProjectScheduleGenerateController::class, 'generate'])
+        ->name('project.jadwal.generate.run');
+
+    // PROGRESS
+    Route::get('/project/{project}/progress', [ProjectProgressController::class, 'index'])
+        ->name('project.progress.index');
+
+    Route::get('/project/{project}/phase/{phase}/progress/create', [ProjectProgressController::class, 'create'])
+        ->name('project.progress.create');
+
+    Route::post('/project/{project}/phase/{phase}/progress', [ProjectProgressController::class, 'store'])
+        ->name('project.progress.store');
+
+    
 
 });

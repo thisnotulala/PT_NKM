@@ -59,6 +59,23 @@
                     <p>Proyek</p>
                 </a>
                 </li>
+                
+
+                <li class="nav-item">
+                <a href="{{ route('jadwal.index') }}"
+                    class="nav-link {{ request()->is('jadwal*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-calendar-alt"></i>
+                    <p>Jadwal Tahapan</p>
+                </a>
+                </li>
+
+                <li class="nav-item">
+                <a href="{{ route('equipment_loans.index') }}"
+                    class="nav-link {{ request()->is('equipment-loans*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-handshake"></i>
+                    <p>Peminjaman Alat</p>
+                </a>
+                </li>
 
             </ul>
         </nav>

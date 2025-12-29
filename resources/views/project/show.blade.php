@@ -15,6 +15,22 @@
       </p>
     @endif
 
+    <div class="mb-3">
+    <a href="{{ route('project.jadwal.generate.form', $project->id) }}"
+      class="btn btn-info">
+      <i class="fas fa-magic"></i> Generate Jadwal Otomatis
+    </a>
+
+    <a href="{{ route('jadwal.index') }}"
+      class="btn btn-outline-secondary">
+      <i class="fas fa-calendar-alt"></i> Lihat Semua Jadwal
+    </a>
+  </div>
+
+    <a href="{{ route('project.progress.index',$project->id) }}" class="btn btn-info mb-3">
+      <i class="fas fa-tasks"></i> Progress Proyek
+    </a>
+
     <hr>
     <h6>Tahapan Proyek</h6>
     <table class="table table-bordered">
