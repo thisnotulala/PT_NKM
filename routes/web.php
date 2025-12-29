@@ -13,6 +13,7 @@ use App\Http\Controllers\EquipmentLoanController;
 use App\Http\Controllers\ProjectProgressController;
 use App\Http\Controllers\ProjectSdmController;
 use App\Http\Controllers\ProjectExpenseController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -27,9 +28,8 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 /* ADMIN AREA */
 Route::middleware('auth')->group(function () {
-    Route::get('/admin/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+    Route::get('/admin/dashboard', [DashboardController::class, 'index'])
+        ->name('admin.dashboard');
 
     /* CLIENT */
     Route::get('/client', [ClientController::class, 'index'])->name('client.index');
