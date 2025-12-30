@@ -20,11 +20,19 @@ class ClientController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'alamat' => 'nullable|string',
-            'nomor_telepon' => 'nullable|string|max:50',
-        ]);
+        $request->validate(
+            [
+                'nama' => 'required|string|max:255',
+                'alamat' => 'nullable|string',
+                'nomor_telepon' => 'required|regex:/^[0-9]+$/|min:8|max:15',
+            ],
+            [
+                'nomor_telepon.regex' => 'Nomor telepon hanya boleh berisi angka.',
+                'nomor_telepon.min'   => 'Nomor telepon minimal 8 digit.',
+                'nomor_telepon.max'   => 'Nomor telepon maksimal 15 digit.',
+                'nomor_telepon.required' => 'Nomor telepon wajib diisi.',
+            ]
+        );
 
         Client::create($request->only([
             'nama',
@@ -43,11 +51,19 @@ class ClientController extends Controller
 
     public function update(Request $request, Client $client)
     {
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'alamat' => 'nullable|string',
-            'nomor_telepon' => 'nullable|string|max:50',
-        ]);
+        $request->validate(
+            [
+                'nama' => 'required|string|max:255',
+                'alamat' => 'nullable|string',
+                'nomor_telepon' => 'required|regex:/^[0-9]+$/|min:8|max:15',
+            ],
+            [
+                'nomor_telepon.regex' => 'Nomor telepon hanya boleh berisi angka.',
+                'nomor_telepon.min'   => 'Nomor telepon minimal 8 digit.',
+                'nomor_telepon.max'   => 'Nomor telepon maksimal 15 digit.',
+                'nomor_telepon.required' => 'Nomor telepon wajib diisi.',
+            ]
+        );
 
         $client->update($request->only([
             'nama',

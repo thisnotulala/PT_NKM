@@ -51,6 +51,13 @@
         @error('dokumen') <small class="text-danger">{{ $message }}</small> @enderror
       </div>
 
+      <div class="form-group mt-3">
+        <label>Upload RAB (PDF / Excel) (opsional)</label>
+        <input type="file" name="rab" class="form-control"
+              accept="application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        @error('rab') <small class="text-danger">{{ $message }}</small> @enderror
+      </div>
+
       <hr>
       <div class="d-flex align-items-center justify-content-between">
         <h6 class="mb-0">Tahapan Proyek (Total harus 100%)</h6>

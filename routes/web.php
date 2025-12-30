@@ -14,6 +14,7 @@ use App\Http\Controllers\ProjectProgressController;
 use App\Http\Controllers\ProjectSdmController;
 use App\Http\Controllers\ProjectExpenseController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProjectReportController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -110,6 +111,13 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/project/{project}/jadwal/generate', [ProjectScheduleGenerateController::class, 'generate'])
         ->name('project.jadwal.generate.run');
+
+    //LAPORAN
+    Route::get('/laporan', [ProjectReportController::class, 'pickProject'])
+        ->name('report.pick');
+
+    Route::get('/laporan/project/{project}/pdf', [ProjectReportController::class, 'projectPdf'])
+        ->name('report.project.pdf');
 
     // PROGRESS
     Route::get('/progress-proyek', [ProjectProgressController::class, 'pickProject'])

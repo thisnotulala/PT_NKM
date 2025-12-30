@@ -30,7 +30,9 @@ class ProjectController extends Controller
             'client_id'       => 'required|exists:clients,id',
             'tanggal_mulai'   => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+
             'dokumen'         => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg|max:5120',
+            'rab'             => 'nullable|file|mimes:pdf,xls,xlsx|max:5120', // ✅ tambah RAB
 
             'tahapan'                => 'required|array|min:1',
             'tahapan.*.nama_tahapan' => 'required|string|max:255',
@@ -50,12 +52,19 @@ class ProjectController extends Controller
                 $path = $request->file('dokumen')->store('dokumen_proyek', 'public');
             }
 
+            // ✅ tambah: simpan RAB juga
+            $rabPath = null;
+            if ($request->hasFile('rab')) {
+                $rabPath = $request->file('rab')->store('rab_proyek', 'public');
+            }
+
             $project = Project::create([
                 'nama_proyek'     => $data['nama_proyek'],
                 'client_id'       => $data['client_id'],
                 'tanggal_mulai'   => $data['tanggal_mulai'],
                 'tanggal_selesai' => $data['tanggal_selesai'],
                 'dokumen'         => $path,
+                'rab_path'        => $rabPath, // ✅ simpan ke kolom rab_path
             ]);
 
             foreach ($data['tahapan'] as $i => $t) {
@@ -70,6 +79,7 @@ class ProjectController extends Controller
 
         return redirect()->route('project.index')->with('success', 'Proyek berhasil ditambahkan.');
     }
+
 
     public function show(Project $project)
     {

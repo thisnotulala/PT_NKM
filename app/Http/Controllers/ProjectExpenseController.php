@@ -145,10 +145,12 @@ class ProjectExpenseController extends Controller
     public function pickProject()
     {
         $projects = \App\Models\Project::with('client')
+            ->withSum('expenses', 'nominal') // ✅ otomatis bikin field: expenses_sum_nominal
             ->orderByDesc('created_at')
             ->get();
 
         return view('project.expenses.pick', compact('projects'));
     }
+
 
 }

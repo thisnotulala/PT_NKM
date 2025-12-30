@@ -103,6 +103,16 @@
                     </a>
                 </li>
 
+                <!-- REPORT -->
+                <li class="nav-item">
+                    <a href="{{ route('report.pick') }}"
+                        class="nav-link {{ request()->is('laporan*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-print"></i>
+                        <p>Laporan</p>
+                    </a>
+                    </li>
+
+
             </ul>
         </nav>
     </div>

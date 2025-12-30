@@ -106,9 +106,36 @@ class ProjectProgressController extends Controller
 
     public function pickProject()
     {
-        $projects = \App\Models\Project::with('client')
+        $projects = Project::with(['client', 'phases'])
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->map(function ($p) {
+
+                // hitung progress total proyek
+                $progressTotal = $p->phases->sum(function ($ph) {
+                    return ($ph->persen * $ph->progress) / 100;
+                });
+
+                // tentukan status
+                $today = now()->toDateString();
+
+                if ($progressTotal >= 100) {
+                    $status = 'Selesai';
+                } elseif ($today > $p->tanggal_selesai) {
+                    $status = 'Terlambat';
+                } else {
+                    $status = 'Aktif';
+                }
+
+                return (object)[
+                    'id' => $p->id,
+                    'nama_proyek' => $p->nama_proyek,
+                    'client' => $p->client->nama ?? '-',
+                    'tanggal' => $p->tanggal_mulai . ' s/d ' . $p->tanggal_selesai,
+                    'progress' => round($progressTotal, 1),
+                    'status' => $status
+                ];
+            });
 
         return view('project.progress.pick', compact('projects'));
     }
