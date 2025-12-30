@@ -1,10 +1,10 @@
 @extends('layouts.app')
-@section('title','Laporan')
+@section('title','Laporan Proyek')
 
 @section('content')
 <div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">Laporan</h5>
+  <div class="card-header d-flex align-items-center">
+    <h5 class="mb-0">Laporan Proyek</h5>
   </div>
 
   <div class="card-body">
@@ -26,9 +26,8 @@
           <td>{{ $p->client->nama ?? '-' }}</td>
           <td>{{ $p->tanggal_mulai }} s/d {{ $p->tanggal_selesai }}</td>
           <td class="text-center">
-            <a href="{{ route('report.project.pdf', $p->id) }}"
-               class="btn btn-sm btn-maroon">
-              Cetak PDF
+            <a href="{{ route('report.project.pdf', $p->id) }}" class="btn btn-sm btn-maroon">
+              <i class="fas fa-print"></i> Cetak PDF
             </a>
           </td>
         </tr>

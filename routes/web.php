@@ -15,6 +15,8 @@ use App\Http\Controllers\ProjectSdmController;
 use App\Http\Controllers\ProjectExpenseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProjectReportController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -31,6 +33,14 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware('auth')->group(function () {
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])
         ->name('admin.dashboard');
+
+    /* USER */
+    Route::get('/user', [UserController::class, 'index'])->name('user.index');
+    Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
+    Route::post('/user', [UserController::class, 'store'])->name('user.store');
+    Route::get('/user/{user}/edit', [UserController::class, 'edit'])->name('user.edit');
+    Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
+    Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
 
     /* CLIENT */
     Route::get('/client', [ClientController::class, 'index'])->name('client.index');
@@ -141,6 +151,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/project/{project}/expenses/{expense}', [ProjectExpenseController::class, 'destroy'])->name('project.expenses.destroy');
     Route::get('/pengeluaran-proyek', [\App\Http\Controllers\ProjectExpenseController::class, 'pickProject'])
         ->name('project.expenses.pick');
+
+    //PROFILE
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     
 

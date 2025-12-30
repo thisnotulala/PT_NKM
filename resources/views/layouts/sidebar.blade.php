@@ -19,6 +19,15 @@
                 <!-- MASTER DATA -->
                 <li class="nav-header">MASTER DATA</li>
 
+                <!-- USER -->
+                <li class="nav-item">
+                    <a href="{{ route('user.index') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Manajemen User</span>
+                    </a>
+                    </li>
+
+
                 <!-- CLIENT -->
                 <li class="nav-item">
                     <a href="{{ route('client.index') }}"
