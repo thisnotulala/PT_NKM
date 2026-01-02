@@ -4,15 +4,17 @@
 @section('content')
 <div class="card">
   <div class="card-header">
-    <h5>Edit Pengeluaran - {{ $project->nama_proyek }}</h5>
+    <h5 class="mb-0">Edit Pengeluaran - {{ $project->nama_proyek }}</h5>
   </div>
 
   <div class="card-body">
     @if($errors->any())
-      <div class="alert alert-danger">{{ $errors->first() }}</div>
+      <div class="alert alert-danger">
+        {{ $errors->first() }}
+      </div>
     @endif
 
-    <form action="{{ route('project.expenses.update', [$project->id, $expense->id]) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('project.expenses.update', [$project->id, $expense->id]) }}" method="POST" enctype="multipart/form-data" autocomplete="off">
       @csrf
       @method('PUT')
 
@@ -26,9 +28,7 @@
       <div class="form-group mt-3">
         <label>Kategori</label>
         <select name="kategori" class="form-control" required>
-          @php
-            $kats = ['Material','SDM','Equipment','Operasional','Lainnya'];
-          @endphp
+          @php $kats = ['Material','SDM','Equipment','Operasional','Lainnya']; @endphp
           <option value="">-- pilih kategori --</option>
           @foreach($kats as $k)
             <option value="{{ $k }}" {{ old('kategori', $expense->kategori) == $k ? 'selected' : '' }}>
@@ -36,6 +36,27 @@
             </option>
           @endforeach
         </select>
+      </div>
+
+      {{-- MATERIAL FIELDS --}}
+      <div id="materialFields" class="mt-3" style="display:none;">
+        <div class="form-group">
+          <label>Qty (Material)</label>
+          <input type="number" step="0.01" name="qty" class="form-control"
+                 value="{{ old('qty', $expense->qty) }}" placeholder="contoh: 10">
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Satuan</label>
+          <select name="satuan_id" class="form-control">
+            <option value="">-- pilih satuan --</option>
+            @foreach($satuans as $st)
+              <option value="{{ $st->id }}" {{ old('satuan_id', $expense->satuan_id) == $st->id ? 'selected' : '' }}>
+                {{ $st->nama_satuan ?? $st->nama ?? '-' }}
+              </option>
+            @endforeach
+          </select>
+        </div>
       </div>
 
       <div class="form-group mt-3">
@@ -55,8 +76,7 @@
         <select name="sdm_id" class="form-control">
           <option value="">-- tidak ada --</option>
           @foreach($sdms as $s)
-            <option value="{{ $s->id }}"
-              {{ old('sdm_id', $expense->sdm_id) == $s->id ? 'selected' : '' }}>
+            <option value="{{ $s->id }}" {{ old('sdm_id', $expense->sdm_id) == $s->id ? 'selected' : '' }}>
               {{ $s->nama }} ({{ $s->peran }})
             </option>
           @endforeach
@@ -68,8 +88,7 @@
         <select name="equipment_id" class="form-control">
           <option value="">-- tidak ada --</option>
           @foreach($equipment as $eq)
-            <option value="{{ $eq->id }}"
-              {{ old('equipment_id', $expense->equipment_id) == $eq->id ? 'selected' : '' }}>
+            <option value="{{ $eq->id }}" {{ old('equipment_id', $expense->equipment_id) == $eq->id ? 'selected' : '' }}>
               {{ $eq->nama_alat }} (Stok: {{ $eq->stok }})
             </option>
           @endforeach
@@ -96,4 +115,25 @@
     </form>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const kategori = document.querySelector('select[name="kategori"]');
+  const materialBox = document.getElementById('materialFields');
+
+  function toggleMaterial() {
+    if (!kategori || !materialBox) return;
+    if (kategori.value === 'Material') {
+      materialBox.style.display = 'block';
+    } else {
+      materialBox.style.display = 'none';
+    }
+  }
+
+  if (kategori) {
+    kategori.addEventListener('change', toggleMaterial);
+    toggleMaterial();
+  }
+});
+</script>
 @endsection

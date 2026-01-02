@@ -77,6 +77,11 @@ class ClientController extends Controller
 
     public function destroy(Client $client)
     {
+        // ✅ Administrasi & role lain tidak boleh hapus
+        if (!auth()->check() || auth()->user()->role !== 'site_manager') {
+            abort(403, 'Akses ditolak');
+        }
+
         $client->delete();
 
         return redirect()->route('client.index')

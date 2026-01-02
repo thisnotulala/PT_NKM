@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProjectExpense extends Model
 {
     protected $fillable = [
-        'project_id','tanggal','kategori','nominal','keterangan',
+        'project_id','tanggal','kategori', 'qty','satuan_id','nominal','keterangan',
         'sdm_id','equipment_id','bukti_path','created_by'
     ];
 
@@ -25,4 +25,9 @@ class ProjectExpense extends Model
     {
         return $this->belongsTo(Equipment::class);
     }
+    public function satuan()
+    {
+        return $this->belongsTo(\App\Models\Satuan::class, 'satuan_id');
+    }
+
 }

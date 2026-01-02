@@ -34,21 +34,30 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])
         ->name('admin.dashboard');
 
-    /* USER */
-    Route::get('/user', [UserController::class, 'index'])->name('user.index');
-    Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
-    Route::post('/user', [UserController::class, 'store'])->name('user.store');
-    Route::get('/user/{user}/edit', [UserController::class, 'edit'])->name('user.edit');
-    Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
-    Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+    /* USER - hanya site_manager */
+    Route::middleware('role:site_manager')->group(function () {
+        Route::get('/user', [UserController::class, 'index'])->name('user.index');
+        Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
+        Route::post('/user', [UserController::class, 'store'])->name('user.store');
+        Route::get('/user/{user}/edit', [UserController::class, 'edit'])->name('user.edit');
+        Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
+        Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+    });
 
-    /* CLIENT */
-    Route::get('/client', [ClientController::class, 'index'])->name('client.index');
-    Route::get('/client/create', [ClientController::class, 'create'])->name('client.create');
-    Route::post('/client', [ClientController::class, 'store'])->name('client.store');
-    Route::get('/client/{client}/edit', [ClientController::class, 'edit'])->name('client.edit');
-    Route::put('/client/{client}', [ClientController::class, 'update'])->name('client.update');
-    Route::delete('/client/{client}', [ClientController::class, 'destroy'])->name('client.destroy');
+
+    /* CLIENT - hanya site_manager & administrasi */
+    Route::middleware('role:site_manager,administrasi')->group(function () {
+        Route::get('/client', [ClientController::class, 'index'])->name('client.index');
+        Route::get('/client/create', [ClientController::class, 'create'])->name('client.create');
+        Route::post('/client', [ClientController::class, 'store'])->name('client.store');
+        Route::get('/client/{client}/edit', [ClientController::class, 'edit'])->name('client.edit');
+        Route::put('/client/{client}', [ClientController::class, 'update'])->name('client.update');
+    });
+
+    /* CLIENT - delete hanya site_manager */
+    Route::middleware('role:site_manager')->group(function () {
+        Route::delete('/client/{client}', [ClientController::class, 'destroy'])->name('client.destroy');
+    });
 
     /* SDM (MASTER) */
     Route::get('/sdm', [SdmController::class, 'index'])->name('sdm.index');

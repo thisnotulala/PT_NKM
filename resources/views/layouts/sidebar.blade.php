@@ -20,12 +20,14 @@
                 <li class="nav-header">MASTER DATA</li>
 
                 <!-- USER -->
-                <li class="nav-item">
-                    <a href="{{ route('user.index') }}" class="nav-link">
-                        <i class="fas fa-users"></i>
-                        <span>Manajemen User</span>
-                    </a>
+                @if(auth()->user()->role === 'site manager')
+                    <li class="nav-item">
+                        <a href="{{ route('user.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-users"></i>
+                        <p>Manajemen User</p>
+                        </a>
                     </li>
+                    @endif
 
 
                 <!-- CLIENT -->

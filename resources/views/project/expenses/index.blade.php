@@ -28,60 +28,73 @@
       <b>Total Pengeluaran:</b> Rp {{ number_format($total, 0, ',', '.') }}
     </div>
 
-    <table class="table table-bordered table-hover">
-      <thead>
-        <tr>
-          <th width="50">No</th>
-          <th width="120">Tanggal</th>
-          <th width="140">Kategori</th>
-          <th>Keterangan</th>
-          <th width="140">SDM</th>
-          <th width="160">Equipment</th>
-          <th width="160" class="text-right">Nominal</th>
-          <th width="110">Bukti</th>
-          <th width="140">Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        @forelse($expenses as $e)
-        <tr>
-          <td>{{ $loop->iteration }}</td>
-          <td>{{ $e->tanggal }}</td>
-          <td>{{ $e->kategori }}</td>
-          <td>{{ $e->keterangan ?? '-' }}</td>
-          <td>{{ $e->sdm->nama ?? '-' }}</td>
-          <td>{{ $e->equipment->nama_alat ?? '-' }}</td>
-          <td class="text-right">Rp {{ number_format($e->nominal, 0, ',', '.') }}</td>
-          <td class="text-center">
-            @if($e->bukti_path)
-              <a target="_blank" href="{{ asset('storage/'.$e->bukti_path) }}">Lihat</a>
-            @else
-              -
-            @endif
-          </td>
-          <td>
-            <div class="action-group">
-              <a href="{{ route('project.expenses.edit', [$project->id, $e->id]) }}"
-                 class="btn-action btn-edit" title="Edit">
-                <i class="fas fa-pen"></i>
-              </a>
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover mb-0">
+        <thead>
+          <tr>
+            <th width="50">No</th>
+            <th width="120">Tanggal</th>
+            <th width="160">Kategori</th>
+            <th>Keterangan</th>
+            <th width="140">SDM</th>
+            <th width="160">Equipment</th>
+            <th width="160" class="text-right">Nominal</th>
+            <th width="110">Bukti</th>
+            <th width="140">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          @forelse($expenses as $e)
+          <tr>
+            <td>{{ $loop->iteration }}</td>
+            <td>{{ $e->tanggal }}</td>
 
-              <form action="{{ route('project.expenses.destroy', [$project->id, $e->id]) }}" method="POST">
-                @csrf
-                @method('DELETE')
-                <button class="btn-action btn-delete"
-                        onclick="return confirm('Hapus pengeluaran ini?')" title="Hapus">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        @empty
-        <tr><td colspan="9" class="text-center">Belum ada pengeluaran</td></tr>
-        @endforelse
-      </tbody>
-    </table>
+            <td>
+              {{ $e->kategori }}
+              @if($e->kategori === 'Material' && $e->qty)
+                <div class="text-muted" style="font-size:12px;">
+                  Qty: {{ $e->qty }} {{ $e->satuan->nama_satuan ?? $e->satuan->nama ?? '' }}
+                </div>
+              @endif
+            </td>
+
+            <td>{{ $e->keterangan ?? '-' }}</td>
+            <td>{{ $e->sdm->nama ?? '-' }}</td>
+            <td>{{ $e->equipment->nama_alat ?? '-' }}</td>
+            <td class="text-right">Rp {{ number_format($e->nominal, 0, ',', '.') }}</td>
+
+            <td class="text-center">
+              @if($e->bukti_path)
+                <a target="_blank" href="{{ asset('storage/'.$e->bukti_path) }}">Lihat</a>
+              @else
+                -
+              @endif
+            </td>
+
+            <td>
+              <div class="action-group">
+                <a href="{{ route('project.expenses.edit', [$project->id, $e->id]) }}"
+                   class="btn-action btn-edit" title="Edit">
+                  <i class="fas fa-pen"></i>
+                </a>
+
+                <form action="{{ route('project.expenses.destroy', [$project->id, $e->id]) }}" method="POST">
+                  @csrf
+                  @method('DELETE')
+                  <button class="btn-action btn-delete"
+                          onclick="return confirm('Hapus pengeluaran ini?')" title="Hapus" type="submit">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="9" class="text-center">Belum ada pengeluaran</td></tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
 
   </div>
 </div>

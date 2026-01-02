@@ -7,15 +7,20 @@
     <div class="card-header d-flex align-items-center">
         <h5 class="mb-0">Data Client</h5>
 
-        <a href="{{ route('client.create') }}" 
-        class="btn btn-maroon ml-auto">
-            <i class="fas fa-plus"></i> Tambah Client
-        </a>
+        {{-- Tambah client: site_manager & administrasi --}}
+        @if(in_array(auth()->user()->role, ['site_manager','administrasi']))
+            <a href="{{ route('client.create') }}"
+               class="btn btn-maroon ml-auto">
+                <i class="fas fa-plus"></i> Tambah Client
+            </a>
+        @endif
     </div>
 
     <div class="card-body">
         @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
         @endif
 
         <table class="table table-bordered table-hover">
@@ -33,32 +38,42 @@
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $client->nama }}</td>
-                    <td>{{ $client->alamat }}</td>
+                    <td>{{ $client->alamat ?? '-' }}</td>
                     <td>{{ $client->nomor_telepon }}</td>
                     <td>
                         <div class="action-group">
-                            <a href="{{ route('client.edit', $client->id) }}"
-                            class="btn-action btn-edit"
-                            title="Edit Client">
-                                <i class="fas fa-pen"></i>
-                            </a>
 
-                            <form action="{{ route('client.destroy', $client->id) }}"
-                                method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button onclick="return confirm('Hapus client ini?')"
-                                        class="btn-action btn-delete"
-                                        title="Hapus Client">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            {{-- Edit: site_manager & administrasi --}}
+                            @if(in_array(auth()->user()->role, ['site_manager','administrasi']))
+                                <a href="{{ route('client.edit', $client->id) }}"
+                                   class="btn-action btn-edit"
+                                   title="Edit Client">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                            @endif
+
+                            {{-- Hapus: HANYA site_manager --}}
+                            @if(auth()->user()->role === 'site_manager')
+                                <form action="{{ route('client.destroy', $client->id) }}"
+                                      method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button onclick="return confirm('Hapus client ini?')"
+                                            class="btn-action btn-delete"
+                                            title="Hapus Client">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            @endif
+
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center">Data client kosong</td>
+                    <td colspan="5" class="text-center">
+                        Data client kosong
+                    </td>
                 </tr>
                 @endforelse
             </tbody>
