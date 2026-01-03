@@ -7,6 +7,12 @@ use App\Models\Satuan;
 
 class SatuanController extends Controller
 {
+    public function __construct()
+    {
+        // ini akan jalan setelah auth middleware, aman
+        $this->middleware(['auth', 'role:administrasi']);
+    }
+
     public function index()
     {
         $satuans = Satuan::latest()->get();
@@ -47,7 +53,6 @@ class SatuanController extends Controller
 
     public function destroy(Satuan $satuan)
     {
-        // karena restrictOnDelete, kalau masih dipakai equipment -> akan gagal.
         $satuan->delete();
         return redirect()->route('satuan.index')->with('success', 'Satuan berhasil dihapus.');
     }

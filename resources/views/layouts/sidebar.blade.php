@@ -31,13 +31,15 @@
 
 
                 <!-- CLIENT -->
+                @if(in_array(auth()->user()->role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('client.index') }}"
-                       class="nav-link {{ request()->is('client*') ? 'active' : '' }}">
+                    class="nav-link {{ request()->is('client*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-building"></i>
                         <p>Client</p>
                     </a>
                 </li>
+                @endif
 
                 <!-- SDM -->
                 <li class="nav-item">
@@ -49,22 +51,30 @@
                 </li>
 
                 <!-- SATUAN -->
+                {{-- SATUAN - hanya administrasi --}}
+                @if(auth()->user()->role === 'administrasi')
                 <li class="nav-item">
                     <a href="{{ route('satuan.index') }}"
-                       class="nav-link {{ request()->is('satuan*') ? 'active' : '' }}">
+                    class="nav-link {{ request()->is('satuan*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-ruler-combined"></i>
                         <p>Satuan</p>
                     </a>
                 </li>
+                @endif
+
 
                 <!-- EQUIPMENT -->
+                {{-- EQUIPMENT: site manager, administrasi, kepala lapangan --}}
+                @if(in_array(auth()->user()->role, ['site manager','administrasi','kepala lapangan']))
                 <li class="nav-item">
                     <a href="{{ route('equipment.index') }}"
-                       class="nav-link {{ request()->is('equipment*') ? 'active' : '' }}">
+                    class="nav-link {{ request()->is('equipment*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-toolbox"></i>
                         <p>Equipment</p>
                     </a>
                 </li>
+                @endif
+
 
                 <!-- PROYEK -->
                 <li class="nav-header">PROYEK</li>

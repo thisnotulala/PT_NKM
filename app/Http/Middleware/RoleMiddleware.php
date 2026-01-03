@@ -15,8 +15,8 @@ class RoleMiddleware
 
         $userRole = auth()->user()->role;
 
-        if (!in_array($userRole, $roles)) {
-            abort(403, 'Akses ditolak');
+        if (!in_array(auth()->user()->role, $roles)) {
+            abort(403, 'AKSES DITOLAK');
         }
 
         return $next($request);

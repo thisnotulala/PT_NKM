@@ -56,7 +56,12 @@ class EquipmentController extends Controller
 
     public function destroy(Equipment $equipment)
     {
+        if (auth()->user()->role !== 'site manager') {
+            abort(403, 'AKSES DITOLAK');
+        }
+
         $equipment->delete();
         return redirect()->route('equipment.index')->with('success', 'Equipment berhasil dihapus.');
     }
+    
 }

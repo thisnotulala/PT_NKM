@@ -7,8 +7,8 @@
     <div class="card-header d-flex align-items-center">
         <h5 class="mb-0">Data Client</h5>
 
-        {{-- Tambah client: site_manager & administrasi --}}
-        @if(in_array(auth()->user()->role, ['site_manager','administrasi']))
+        {{-- Tambah client: site manager & administrasi --}}
+        @if(in_array(auth()->user()->role, ['site manager','administrasi']))
             <a href="{{ route('client.create') }}"
                class="btn btn-maroon ml-auto">
                 <i class="fas fa-plus"></i> Tambah Client
@@ -20,6 +20,12 @@
         @if(session('success'))
             <div class="alert alert-success">
                 {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
             </div>
         @endif
 
@@ -43,8 +49,8 @@
                     <td>
                         <div class="action-group">
 
-                            {{-- Edit: site_manager & administrasi --}}
-                            @if(in_array(auth()->user()->role, ['site_manager','administrasi']))
+                            {{-- Edit: site manager & administrasi --}}
+                            @if(in_array(auth()->user()->role, ['site manager','administrasi']))
                                 <a href="{{ route('client.edit', $client->id) }}"
                                    class="btn-action btn-edit"
                                    title="Edit Client">
@@ -52,13 +58,14 @@
                                 </a>
                             @endif
 
-                            {{-- Hapus: HANYA site_manager --}}
-                            @if(auth()->user()->role === 'site_manager')
+                            {{-- Hapus: hanya site manager --}}
+                            @if(auth()->user()->role === 'site manager')
                                 <form action="{{ route('client.destroy', $client->id) }}"
-                                      method="POST">
+                                      method="POST"
+                                      onsubmit="return confirm('Hapus client ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button onclick="return confirm('Hapus client ini?')"
+                                    <button type="submit"
                                             class="btn-action btn-delete"
                                             title="Hapus Client">
                                         <i class="fas fa-trash"></i>

@@ -35,7 +35,7 @@ Route::middleware('auth')->group(function () {
         ->name('admin.dashboard');
 
     /* USER - hanya site_manager */
-    Route::middleware('role:site_manager')->group(function () {
+    Route::middleware('role:site manager')->group(function () {
         Route::get('/user', [UserController::class, 'index'])->name('user.index');
         Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
         Route::post('/user', [UserController::class, 'store'])->name('user.store');
@@ -45,8 +45,8 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    /* CLIENT - hanya site_manager & administrasi */
-    Route::middleware('role:site_manager,administrasi')->group(function () {
+    /* CLIENT - site manager & administrasi boleh akses (tanpa delete) */
+    Route::middleware('role:site manager,administrasi')->group(function () {
         Route::get('/client', [ClientController::class, 'index'])->name('client.index');
         Route::get('/client/create', [ClientController::class, 'create'])->name('client.create');
         Route::post('/client', [ClientController::class, 'store'])->name('client.store');
@@ -54,10 +54,10 @@ Route::middleware('auth')->group(function () {
         Route::put('/client/{client}', [ClientController::class, 'update'])->name('client.update');
     });
 
-    /* CLIENT - delete hanya site_manager */
-    Route::middleware('role:site_manager')->group(function () {
+    /* CLIENT - delete hanya site manager */
+    Route::middleware('role:site manager')->group(function () {
         Route::delete('/client/{client}', [ClientController::class, 'destroy'])->name('client.destroy');
-    });
+    }); 
 
     /* SDM (MASTER) */
     Route::get('/sdm', [SdmController::class, 'index'])->name('sdm.index');
@@ -74,13 +74,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/project/{project}/sdm/{assignment}', [ProjectSdmController::class, 'destroy'])
         ->name('project.sdm.destroy');
 
-    // SATUAN
-    Route::get('/satuan', [SatuanController::class, 'index'])->name('satuan.index');
-    Route::get('/satuan/create', [SatuanController::class, 'create'])->name('satuan.create');
-    Route::post('/satuan', [SatuanController::class, 'store'])->name('satuan.store');
-    Route::get('/satuan/{satuan}/edit', [SatuanController::class, 'edit'])->name('satuan.edit');
-    Route::put('/satuan/{satuan}', [SatuanController::class, 'update'])->name('satuan.update');
-    Route::delete('/satuan/{satuan}', [SatuanController::class, 'destroy'])->name('satuan.destroy');
+    /* SATUAN - HANYA ADMINISTRASI */
+    Route::middleware(['auth', 'role:administrasi'])->group(function () {
+        Route::get('/satuan', [SatuanController::class, 'index'])->name('satuan.index');
+        Route::get('/satuan/create', [SatuanController::class, 'create'])->name('satuan.create');
+        Route::post('/satuan', [SatuanController::class, 'store'])->name('satuan.store');
+        Route::get('/satuan/{satuan}/edit', [SatuanController::class, 'edit'])->name('satuan.edit');
+        Route::put('/satuan/{satuan}', [SatuanController::class, 'update'])->name('satuan.update');
+        Route::delete('/satuan/{satuan}', [SatuanController::class, 'destroy'])->name('satuan.destroy');
+    });
 
     // EQUIPMENT
     Route::get('/equipment', [EquipmentController::class, 'index'])->name('equipment.index');
