@@ -8,14 +8,23 @@ use Illuminate\Http\Request;
 
 class ProjectSdmController extends Controller
 {
+    /**
+     * Tambah penugasan SDM ke proyek
+     * site manager & administrasi
+     */
     public function store(Request $request, Project $project)
     {
+        // 🔒 Role check
+        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) {
+            abort(403, 'Anda tidak memiliki akses untuk menambahkan SDM ke proyek.');
+        }
+
         $data = $request->validate([
             'sdm_id' => 'required|exists:sdms,id',
             'peran_di_proyek' => 'nullable|string|max:255',
         ]);
 
-        // 1) ✅ Cegah dobel (sdm yang sama tidak boleh ditambahkan 2x di proyek yang sama)
+        // 1️⃣ Cegah SDM dobel dalam proyek yang sama
         $exists = ProjectSdm::where('project_id', $project->id)
             ->where('sdm_id', $data['sdm_id'])
             ->exists();
@@ -24,10 +33,7 @@ class ProjectSdmController extends Controller
             return back()->with('error', 'SDM ini sudah ditugaskan di proyek ini.');
         }
 
-        // 2) ✅ Cegah bentrok tanggal dengan proyek lain
-        // Bentrok jika:
-        // tanggal_mulai_proyek_lain <= tanggal_selesai_proyek_ini
-        // DAN tanggal_selesai_proyek_lain >= tanggal_mulai_proyek_ini
+        // 2️⃣ Cegah bentrok jadwal proyek lain
         $startNew = $project->tanggal_mulai;
         $endNew   = $project->tanggal_selesai;
 
@@ -43,7 +49,7 @@ class ProjectSdmController extends Controller
             return back()->with('error', 'SDM ini sedang digunakan di proyek lain pada rentang tanggal proyek ini.');
         }
 
-        // 3) ✅ Jika aman, simpan penugasan
+        // 3️⃣ Simpan penugasan
         ProjectSdm::create([
             'project_id' => $project->id,
             'sdm_id' => $data['sdm_id'],
@@ -53,9 +59,21 @@ class ProjectSdmController extends Controller
         return back()->with('success', 'SDM berhasil ditambahkan ke proyek.');
     }
 
+    /**
+     * Hapus penugasan SDM dari proyek
+     * hanya site manager
+     */
     public function destroy(Project $project, ProjectSdm $assignment)
     {
-        if ($assignment->project_id != $project->id) abort(404);
+        // 🔒 Role check
+        if (auth()->user()->role !== 'site manager') {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus SDM dari proyek.');
+        }
+
+        // Pastikan assignment milik proyek ini
+        if ($assignment->project_id != $project->id) {
+            abort(404);
+        }
 
         $assignment->delete();
 

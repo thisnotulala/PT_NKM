@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/project/{project}/sdm/{assignment}', [ProjectSdmController::class, 'destroy'])
         ->name('project.sdm.destroy');
 
+
     /* SATUAN - SITE MANAGER & ADMINISTRASI */
     Route::middleware(['auth', 'role:site manager,administrasi'])->group(function () {
         Route::get('/satuan', [SatuanController::class, 'index'])->name('satuan.index');
@@ -85,11 +86,11 @@ Route::middleware('auth')->group(function () {
 
     // PROJECT
    /* PROJECT - LIHAT (SEMUA ROLE LOGIN) */
-Route::get('/project', [ProjectController::class, 'index'])
-    ->name('project.index');
+    Route::get('/project', [ProjectController::class, 'index'])
+        ->name('project.index');
 
-/* PROJECT - TAMBAH & EDIT (SITE MANAGER + ADMINISTRASI) */
-Route::middleware('role:site manager,administrasi')->group(function () {
+    /* PROJECT - TAMBAH & EDIT (SITE MANAGER + ADMINISTRASI) */
+    Route::middleware('role:site manager,administrasi')->group(function () {
 
     Route::get('/project/create', [ProjectController::class, 'create'])
         ->name('project.create');
@@ -148,17 +149,28 @@ Route::middleware('role:site manager,administrasi')->group(function () {
     Route::get('/laporan/project/{project}/pdf', [ProjectReportController::class, 'projectPdf'])
         ->name('report.project.pdf');
 
-    // PROGRESS
-    Route::get('/progress-proyek', [ProjectProgressController::class, 'pickProject'])
-        ->name('project.progress.pick');
-    Route::get('/project/{project}/progress', [ProjectProgressController::class, 'index'])
-        ->name('project.progress.index');
+   // PROGRESS - PILIH PROYEK
+    Route::middleware('role:site manager,administrasi,kepala lapangan')->group(function () {
 
-    Route::get('/project/{project}/phase/{phase}/progress/create', [ProjectProgressController::class, 'create'])
-        ->name('project.progress.create');
+        Route::get('/progress-proyek', [ProjectProgressController::class, 'pickProject'])
+            ->name('project.progress.pick');
 
-    Route::post('/project/{project}/phase/{phase}/progress', [ProjectProgressController::class, 'store'])
-        ->name('project.progress.store');
+        Route::get('/project/{project}/progress', [ProjectProgressController::class, 'index'])
+            ->name('project.progress.index');
+    });
+
+    // UPDATE PROGRESS (HANYA KEPALA LAPANGAN)
+    Route::middleware('role:kepala lapangan')->group(function () {
+
+        Route::get('/project/{project}/phase/{phase}/progress/create',
+            [ProjectProgressController::class, 'create'])
+            ->name('project.progress.create');
+
+        Route::post('/project/{project}/phase/{phase}/progress',
+            [ProjectProgressController::class, 'store'])
+            ->name('project.progress.store');
+    });
+
 
 
     //PROJECT EXPENSES

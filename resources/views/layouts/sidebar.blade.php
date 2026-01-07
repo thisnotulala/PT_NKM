@@ -21,20 +21,19 @@
 
                 <!-- USER -->
                 @if(auth()->user()->role === 'site manager')
-                    <li class="nav-item">
-                        <a href="{{ route('user.index') }}" class="nav-link">
+                <li class="nav-item">
+                    <a href="{{ route('user.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-users"></i>
                         <p>Manajemen User</p>
-                        </a>
-                    </li>
-                    @endif
-
+                    </a>
+                </li>
+                @endif
 
                 <!-- CLIENT -->
                 @if(in_array(auth()->user()->role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('client.index') }}"
-                    class="nav-link {{ request()->is('client*') ? 'active' : '' }}">
+                       class="nav-link {{ request()->is('client*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-building"></i>
                         <p>Client</p>
                     </a>
@@ -51,30 +50,26 @@
                 </li>
 
                 <!-- SATUAN -->
-                {{-- SATUAN: site manager & administrasi --}}
                 @if(in_array(auth()->user()->role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('satuan.index') }}"
-                    class="nav-link {{ request()->is('satuan*') ? 'active' : '' }}">
+                       class="nav-link {{ request()->is('satuan*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-ruler-combined"></i>
                         <p>Satuan</p>
                     </a>
                 </li>
                 @endif
 
-
                 <!-- EQUIPMENT -->
-                {{-- EQUIPMENT: site manager, administrasi, kepala lapangan --}}
                 @if(in_array(auth()->user()->role, ['site manager','administrasi','kepala lapangan']))
                 <li class="nav-item">
                     <a href="{{ route('equipment.index') }}"
-                    class="nav-link {{ request()->is('equipment*') ? 'active' : '' }}">
+                       class="nav-link {{ request()->is('equipment*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-toolbox"></i>
                         <p>Equipment</p>
                     </a>
                 </li>
                 @endif
-
 
                 <!-- PROYEK -->
                 <li class="nav-header">PROYEK</li>
@@ -87,24 +82,25 @@
                     </a>
                 </li>
 
-                <!-- PROGRESS PROYEK -->
+                <!-- PROGRESS PROYEK (SEMUA ROLE BOLEH LIHAT) -->
+                @if(in_array(auth()->user()->role, ['site manager','administrasi','kepala lapangan']))
                 <li class="nav-item">
                     <a href="{{ route('project.progress.pick') }}"
-                        class="nav-link {{ request()->routeIs('project.progress.pick') ? 'active' : '' }}">
+                       class="nav-link {{ request()->routeIs('project.progress.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-tasks"></i>
                         <p>Progress Proyek</p>
                     </a>
-                    </li>
-
+                </li>
+                @endif
 
                 <!-- PENGELUARAN PROYEK -->
                 <li class="nav-item">
                     <a href="{{ route('project.expenses.pick') }}"
-                        class="nav-link {{ request()->routeIs('project.expenses.pick') ? 'active' : '' }}">
+                       class="nav-link {{ request()->routeIs('project.expenses.pick') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-money-bill-wave"></i>
                         <p>Pengeluaran Proyek</p>
                     </a>
-                    </li>
+                </li>
 
                 <!-- JADWAL -->
                 <li class="nav-item">
@@ -127,12 +123,11 @@
                 <!-- REPORT -->
                 <li class="nav-item">
                     <a href="{{ route('report.pick') }}"
-                        class="nav-link {{ request()->is('laporan*') ? 'active' : '' }}">
+                       class="nav-link {{ request()->is('laporan*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-print"></i>
                         <p>Laporan</p>
                     </a>
-                    </li>
-
+                </li>
 
             </ul>
         </nav>

@@ -2,9 +2,13 @@
 @section('title','Detail Proyek')
 
 @section('content')
+@php
+    $role = auth()->user()->role;
+@endphp
+
 <div class="card">
 
-  {{-- ✅ HEADER TANPA TOMBOL PENGELUARAN --}}
+  {{-- HEADER --}}
   <div class="card-header">
     <h5 class="mb-0">Detail Proyek</h5>
   </div>
@@ -26,8 +30,11 @@
     @endif
 
     @if($project->dokumen)
-      <p><b>Dokumen:</b>
-        <a target="_blank" href="{{ asset('storage/'.$project->dokumen) }}">Lihat Dokumen</a>
+      <p>
+        <b>Dokumen:</b>
+        <a target="_blank" href="{{ asset('storage/'.$project->dokumen) }}">
+          Lihat Dokumen
+        </a>
       </p>
     @endif
 
@@ -42,6 +49,8 @@
     </div>
 
     <hr>
+
+    {{-- TAHAPAN --}}
     <h6>Tahapan Proyek</h6>
     <table class="table table-bordered">
       <thead>
@@ -69,6 +78,8 @@
     </table>
 
     <hr>
+
+    {{-- SDM PROYEK --}}
     <h6>Tim SDM</h6>
 
     @if(session('success'))
@@ -81,7 +92,8 @@
     <div class="card mb-3">
       <div class="card-body">
 
-        {{-- FORM TAMBAH SDM KE PROYEK --}}
+        {{-- FORM TAMBAH SDM --}}
+        @if(in_array($role, ['site manager','administrasi']))
         <form action="{{ route('project.sdm.store', $project->id) }}" method="POST" class="mb-3">
           @csrf
           <div class="row">
@@ -99,7 +111,7 @@
 
             <div class="col-md-5">
               <label>Peran di Proyek (opsional)</label>
-              <input type="text" name="peran_di_proyek" class="form-control" placeholder="misal: PIC, Supervisor">
+              <input type="text" name="peran_di_proyek" class="form-control">
             </div>
 
             <div class="col-md-2 d-flex align-items-end">
@@ -107,8 +119,9 @@
             </div>
           </div>
         </form>
+        @endif
 
-        {{-- LIST SDM YANG SUDAH DITUGASKAN --}}
+        {{-- LIST SDM --}}
         <table class="table table-bordered">
           <thead>
             <tr>
@@ -127,18 +140,25 @@
               <td>{{ $as->sdm->peran ?? '-' }}</td>
               <td>{{ $as->peran_di_proyek ?? '-' }}</td>
               <td>
-                <form action="{{ route('project.sdm.destroy', [$project->id, $as->id]) }}" method="POST">
-                  @csrf
-                  @method('DELETE')
-                  <button class="btn btn-danger btn-sm"
-                          onclick="return confirm('Hapus SDM dari proyek ini?')">
-                    Hapus
-                  </button>
-                </form>
+                @if($role === 'site manager')
+                  <form action="{{ route('project.sdm.destroy', [$project->id, $as->id]) }}"
+                        method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-danger btn-sm"
+                      onclick="return confirm('Hapus SDM dari proyek ini?')">
+                      Hapus
+                    </button>
+                  </form>
+                @else
+                  <span class="text-muted">-</span>
+                @endif
               </td>
             </tr>
             @empty
-            <tr><td colspan="5" class="text-center">Belum ada SDM ditugaskan</td></tr>
+            <tr>
+              <td colspan="5" class="text-center">Belum ada SDM ditugaskan</td>
+            </tr>
             @endforelse
           </tbody>
         </table>
