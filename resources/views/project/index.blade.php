@@ -5,13 +5,19 @@
 <div class="card">
   <div class="card-header d-flex align-items-center">
     <h5 class="mb-0">Data Proyek</h5>
-    <a href="{{ route('project.create') }}" class="btn btn-maroon ml-auto">
-      <i class="fas fa-plus"></i> Tambah Proyek
-    </a>
+
+    {{-- Tambah Proyek: hanya site manager & administrasi --}}
+    @if(in_array(auth()->user()->role, ['site manager','administrasi']))
+      <a href="{{ route('project.create') }}" class="btn btn-maroon ml-auto">
+        <i class="fas fa-plus"></i> Tambah Proyek
+      </a>
+    @endif
   </div>
 
   <div class="card-body">
-    @if(session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
+    @if(session('success'))
+      <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
     <table class="table table-bordered table-hover">
       <thead>
@@ -32,9 +38,19 @@
           <td>{{ $p->tanggal_mulai }} s/d {{ $p->tanggal_selesai }}</td>
           <td>
             <div class="d-flex" style="gap:8px; flex-wrap:wrap;">
-              <a href="{{ route('project.show',$p->id) }}" class="btn btn-sm btn-secondary">Detail</a>
-              <a href="{{ route('project.edit',$p->id) }}" class="btn btn-sm btn-warning">Edit</a>
-            
+
+              {{-- Detail: semua role --}}
+              <a href="{{ route('project.show',$p->id) }}" class="btn btn-sm btn-secondary">
+                Detail
+              </a>
+
+              {{-- Edit: hanya site manager & administrasi --}}
+              @if(in_array(auth()->user()->role, ['site manager','administrasi']))
+                <a href="{{ route('project.edit',$p->id) }}" class="btn btn-sm btn-warning">
+                  Edit
+                </a>
+              @endif
+
             </div>
           </td>
         </tr>
