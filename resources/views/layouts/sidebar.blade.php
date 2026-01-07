@@ -7,7 +7,11 @@
         <nav>
             <ul class="nav nav-pills nav-sidebar flex-column">
 
-                <!-- DASHBOARD -->
+                @php
+                    $role = auth()->user()->role;
+                @endphp
+
+                <!-- DASHBOARD (SEMUA ROLE) -->
                 <li class="nav-item">
                     <a href="{{ route('admin.dashboard') }}"
                        class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -19,18 +23,19 @@
                 <!-- MASTER DATA -->
                 <li class="nav-header">MASTER DATA</li>
 
-                <!-- USER -->
-                @if(auth()->user()->role === 'site manager')
+                <!-- MANAJEMEN USER (SITE MANAGER SAJA) -->
+                @if($role === 'site manager')
                 <li class="nav-item">
-                    <a href="{{ route('user.index') }}" class="nav-link">
+                    <a href="{{ route('user.index') }}"
+                       class="nav-link {{ request()->is('user*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-users"></i>
                         <p>Manajemen User</p>
                     </a>
                 </li>
                 @endif
 
-                <!-- CLIENT -->
-                @if(in_array(auth()->user()->role, ['site manager','administrasi']))
+                <!-- CLIENT (SITE MANAGER & ADMINISTRASI) -->
+                @if(in_array($role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('client.index') }}"
                        class="nav-link {{ request()->is('client*') ? 'active' : '' }}">
@@ -40,7 +45,7 @@
                 </li>
                 @endif
 
-                <!-- SDM -->
+                <!-- SDM (SEMUA ROLE) -->
                 <li class="nav-item">
                     <a href="{{ route('sdm.index') }}"
                        class="nav-link {{ request()->is('sdm*') ? 'active' : '' }}">
@@ -49,8 +54,8 @@
                     </a>
                 </li>
 
-                <!-- SATUAN -->
-                @if(in_array(auth()->user()->role, ['site manager','administrasi']))
+                <!-- SATUAN (SITE MANAGER & ADMINISTRASI) -->
+                @if(in_array($role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('satuan.index') }}"
                        class="nav-link {{ request()->is('satuan*') ? 'active' : '' }}">
@@ -60,8 +65,8 @@
                 </li>
                 @endif
 
-                <!-- EQUIPMENT -->
-                @if(in_array(auth()->user()->role, ['site manager','administrasi','kepala lapangan']))
+                <!-- EQUIPMENT (SEMUA ROLE) -->
+                @if(in_array($role, ['site manager','administrasi','kepala lapangan']))
                 <li class="nav-item">
                     <a href="{{ route('equipment.index') }}"
                        class="nav-link {{ request()->is('equipment*') ? 'active' : '' }}">
@@ -74,6 +79,7 @@
                 <!-- PROYEK -->
                 <li class="nav-header">PROYEK</li>
 
+                <!-- PROYEK (SEMUA ROLE) -->
                 <li class="nav-item">
                     <a href="{{ route('project.index') }}"
                        class="nav-link {{ request()->is('project*') ? 'active' : '' }}">
@@ -82,8 +88,7 @@
                     </a>
                 </li>
 
-                <!-- PROGRESS PROYEK (SEMUA ROLE BOLEH LIHAT) -->
-                @if(in_array(auth()->user()->role, ['site manager','administrasi','kepala lapangan']))
+                <!-- PROGRESS PROYEK (SEMUA ROLE) -->
                 <li class="nav-item">
                     <a href="{{ route('project.progress.pick') }}"
                        class="nav-link {{ request()->routeIs('project.progress.*') ? 'active' : '' }}">
@@ -91,18 +96,19 @@
                         <p>Progress Proyek</p>
                     </a>
                 </li>
-                @endif
 
-                <!-- PENGELUARAN PROYEK -->
+                <!-- PENGELUARAN PROYEK (❗SITE MANAGER & ADMINISTRASI SAJA) -->
+                @if(in_array($role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('project.expenses.pick') }}"
-                       class="nav-link {{ request()->routeIs('project.expenses.pick') ? 'active' : '' }}">
+                       class="nav-link {{ request()->routeIs('project.expenses.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-money-bill-wave"></i>
                         <p>Pengeluaran Proyek</p>
                     </a>
                 </li>
+                @endif
 
-                <!-- JADWAL -->
+                <!-- JADWAL TAHAPAN (SEMUA ROLE) -->
                 <li class="nav-item">
                     <a href="{{ route('jadwal.index') }}"
                        class="nav-link {{ request()->is('jadwal*') ? 'active' : '' }}">
@@ -111,7 +117,7 @@
                     </a>
                 </li>
 
-                <!-- PEMINJAMAN ALAT -->
+                <!-- PEMINJAMAN ALAT (SEMUA ROLE) -->
                 <li class="nav-item">
                     <a href="{{ route('equipment_loans.index') }}"
                        class="nav-link {{ request()->is('equipment-loans*') ? 'active' : '' }}">
@@ -120,7 +126,8 @@
                     </a>
                 </li>
 
-                <!-- REPORT -->
+                <!-- LAPORAN (SITE MANAGER & ADMINISTRASI) -->
+                @if(in_array($role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('report.pick') }}"
                        class="nav-link {{ request()->is('laporan*') ? 'active' : '' }}">
@@ -128,6 +135,7 @@
                         <p>Laporan</p>
                     </a>
                 </li>
+                @endif
 
             </ul>
         </nav>

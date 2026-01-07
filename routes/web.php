@@ -109,38 +109,124 @@ Route::middleware('auth')->group(function () {
     Route::get('/project/{project}', [ProjectController::class, 'show'])
     ->name('project.show');
 
-    //EQUIPMENT LOAN
-    Route::get('/equipment-loans', [EquipmentLoanController::class, 'index'])->name('equipment_loans.index');
-    Route::get('/equipment-loans/create', [EquipmentLoanController::class, 'create'])->name('equipment_loans.create');
-    Route::post('/equipment-loans', [EquipmentLoanController::class, 'store'])->name('equipment_loans.store');
+    // EQUIPMENT LOAN (PEMINJAMAN ALAT)
 
-    Route::get('/equipment-loans/{loan}', [EquipmentLoanController::class, 'show'])->name('equipment_loans.show');
+    Route::middleware('auth')->group(function () {
 
-    Route::post('/equipment-loans/{loan}/approve', [EquipmentLoanController::class, 'approve'])->name('equipment_loans.approve');
-    Route::post('/equipment-loans/{loan}/reject', [EquipmentLoanController::class, 'reject'])->name('equipment_loans.reject');
+        // LIHAT DATA PEMINJAMAN
+        // (SEMUA ROLE LOGIN)
+        Route::get('/equipment-loans',
+            [EquipmentLoanController::class, 'index'])
+            ->name('equipment_loans.index');
 
-    Route::get('/equipment-loans/{loan}/return', [EquipmentLoanController::class, 'returnForm'])->name('equipment_loans.return.form');
-    Route::post('/equipment-loans/{loan}/return', [EquipmentLoanController::class, 'returnStore'])->name('equipment_loans.return.store');
+        Route::get('/equipment-loans/{loan}',
+            [EquipmentLoanController::class, 'show'])
+            ->name('equipment_loans.show');
+
+        // AJUKAN PEMINJAMAN
+        // EQUIPMENT LOAN (PEMINJAMAN ALAT)
+    Route::middleware('auth')->group(function () {
+
+        // =====================
+        // CREATE HARUS DI ATAS
+        // =====================
+
+        // AJUKAN PEMINJAMAN
+        // (KEPALA LAPANGAN, SITE MANAGER, ADMINISTRASI)
+        Route::middleware('role:kepala lapangan,site manager,administrasi')->group(function () {
+
+            Route::get('/equipment-loans/create',
+                [EquipmentLoanController::class, 'create'])
+                ->name('equipment_loans.create');
+
+            Route::post('/equipment-loans',
+                [EquipmentLoanController::class, 'store'])
+                ->name('equipment_loans.store');
+        });
+
+        // LIHAT LIST
+        Route::get('/equipment-loans',
+            [EquipmentLoanController::class, 'index'])
+            ->name('equipment_loans.index');
+
+        // DETAIL (INI SETELAH CREATE)
+        Route::get('/equipment-loans/{loan}',
+            [EquipmentLoanController::class, 'show'])
+            ->name('equipment_loans.show');
+
+        // APPROVE & REJECT
+        Route::middleware('role:site manager,administrasi')->group(function () {
+
+            Route::post('/equipment-loans/{loan}/approve',
+                [EquipmentLoanController::class, 'approve'])
+                ->name('equipment_loans.approve');
+
+            Route::post('/equipment-loans/{loan}/reject',
+                [EquipmentLoanController::class, 'reject'])
+                ->name('equipment_loans.reject');
+        });
+
+        // INPUT PENGEMBALIAN
+        Route::middleware('role:kepala lapangan')->group(function () {
+
+            Route::get('/equipment-loans/{loan}/return',
+                [EquipmentLoanController::class, 'returnForm'])
+                ->name('equipment_loans.return.form');
+
+            Route::post('/equipment-loans/{loan}/return',
+                [EquipmentLoanController::class, 'returnStore'])
+                ->name('equipment_loans.return.store');
+        });
+
+    });
 
 
     //SCHEDULE
-    Route::get('/jadwal', [ProjectPhaseScheduleController::class, 'index'])->name('jadwal.index');
-    Route::get('/jadwal/create', [ProjectPhaseScheduleController::class, 'create'])->name('jadwal.create');
-    Route::post('/jadwal', [ProjectPhaseScheduleController::class, 'store'])->name('jadwal.store');
+    // LIHAT SAJA (SEMUA ROLE)
+    Route::middleware('role:site manager,administrasi,kepala lapangan')->group(function () {
+        Route::get('/jadwal', [ProjectPhaseScheduleController::class, 'index'])
+            ->name('jadwal.index');
+    });
 
-    Route::get('/jadwal/{schedule}/edit', [ProjectPhaseScheduleController::class, 'edit'])->name('jadwal.edit');
-    Route::put('/jadwal/{schedule}', [ProjectPhaseScheduleController::class, 'update'])->name('jadwal.update');
-    Route::delete('/jadwal/{schedule}', [ProjectPhaseScheduleController::class, 'destroy'])->name('jadwal.destroy');
+    // KHUSUS SITE MANAGER (TAMBAH, EDIT, HAPUS)
+    Route::middleware('role:site manager')->group(function () {
 
-    // ajax ambil tahapan berdasarkan proyek
-    Route::get('/jadwal/phases/{project}', [ProjectPhaseScheduleController::class, 'phasesByProject'])
+        Route::get('/jadwal/create', [ProjectPhaseScheduleController::class, 'create'])
+            ->name('jadwal.create');
+
+        Route::post('/jadwal', [ProjectPhaseScheduleController::class, 'store'])
+            ->name('jadwal.store');
+
+        Route::get('/jadwal/{schedule}/edit', [ProjectPhaseScheduleController::class, 'edit'])
+            ->name('jadwal.edit');
+
+        Route::put('/jadwal/{schedule}', [ProjectPhaseScheduleController::class, 'update'])
+            ->name('jadwal.update');
+
+        Route::delete('/jadwal/{schedule}', [ProjectPhaseScheduleController::class, 'destroy'])
+            ->name('jadwal.destroy');
+    });
+
+    // AJAX dropdown tahapan
+    Route::get('/jadwal/phases/{project}',
+        [ProjectPhaseScheduleController::class, 'phasesByProject'])
         ->name('jadwal.phases');
 
-    Route::get('/project/{project}/jadwal/generate', [ProjectScheduleGenerateController::class, 'form'])
-        ->name('project.jadwal.generate.form');
+    // GENERATE JADWAL OTOMATIS (SITE MANAGER)
+    Route::middleware('role:site manager')->group(function () {
 
-    Route::post('/project/{project}/jadwal/generate', [ProjectScheduleGenerateController::class, 'generate'])
-        ->name('project.jadwal.generate.run');
+        // form generate
+        Route::get('/project/{project}/jadwal/generate',
+            [ProjectScheduleGenerateController::class, 'form'])
+            ->name('project.jadwal.generate.form');
+
+        // proses generate
+        Route::post('/project/{project}/jadwal/generate',
+            [ProjectScheduleGenerateController::class, 'generate'])
+            ->name('project.jadwal.generate.run');
+
+    });
+
 
     //LAPORAN
     Route::get('/laporan', [ProjectReportController::class, 'pickProject'])
@@ -174,14 +260,40 @@ Route::middleware('auth')->group(function () {
 
 
     //PROJECT EXPENSES
-    Route::get('/project/{project}/expenses', [ProjectExpenseController::class, 'index'])->name('project.expenses.index');
-    Route::get('/project/{project}/expenses/create', [ProjectExpenseController::class, 'create'])->name('project.expenses.create');
-    Route::post('/project/{project}/expenses', [ProjectExpenseController::class, 'store'])->name('project.expenses.store');
-    Route::get('/project/{project}/expenses/{expense}/edit', [ProjectExpenseController::class, 'edit'])->name('project.expenses.edit');
-    Route::put('/project/{project}/expenses/{expense}', [ProjectExpenseController::class, 'update'])->name('project.expenses.update');
-    Route::delete('/project/{project}/expenses/{expense}', [ProjectExpenseController::class, 'destroy'])->name('project.expenses.destroy');
-    Route::get('/pengeluaran-proyek', [\App\Http\Controllers\ProjectExpenseController::class, 'pickProject'])
-        ->name('project.expenses.pick');
+   
+
+    // LIHAT SAJA (SITE MANAGER & ADMINISTRASI)
+    Route::middleware('role:site manager,administrasi')->group(function () {
+
+        Route::get('/pengeluaran-proyek',
+            [ProjectExpenseController::class, 'pickProject'])
+            ->name('project.expenses.pick');
+
+        Route::get('/project/{project}/expenses',
+            [ProjectExpenseController::class, 'index'])
+            ->name('project.expenses.index');
+    });
+
+    // TAMBAH & EDIT (SITE MANAGER & ADMINISTRASI)
+    Route::middleware('role:site manager,administrasi')->group(function () {
+
+        Route::get('/project/{project}/expenses/create',
+            [ProjectExpenseController::class, 'create'])
+            ->name('project.expenses.create');
+
+        Route::post('/project/{project}/expenses',
+            [ProjectExpenseController::class, 'store'])
+            ->name('project.expenses.store');
+
+        Route::get('/project/{project}/expenses/{expense}/edit',
+            [ProjectExpenseController::class, 'edit'])
+            ->name('project.expenses.edit');
+
+        Route::put('/project/{project}/expenses/{expense}',
+            [ProjectExpenseController::class, 'update'])
+            ->name('project.expenses.update');
+    });
+
 
     //PROFILE
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

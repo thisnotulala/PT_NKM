@@ -4,6 +4,7 @@
 @section('content')
 @php
     $role = auth()->user()->role;
+    $isSiteManager = $role === 'site manager';
 @endphp
 
 <div class="card">
@@ -38,10 +39,16 @@
       </p>
     @endif
 
+    {{-- TOMBOL AKSI --}}
     <div class="mb-3">
-      <a href="{{ route('project.jadwal.generate.form', $project->id) }}" class="btn btn-info">
-        <i class="fas fa-magic"></i> Generate Jadwal Otomatis
-      </a>
+
+      {{-- generate jadwal hanya site manager --}}
+      @if($isSiteManager)
+        <a href="{{ route('project.jadwal.generate.form', $project->id) }}"
+           class="btn btn-info">
+          <i class="fas fa-magic"></i> Generate Jadwal Otomatis
+        </a>
+      @endif
 
       <a href="{{ route('jadwal.index') }}" class="btn btn-outline-secondary">
         <i class="fas fa-calendar-alt"></i> Lihat Semua Jadwal
@@ -140,7 +147,7 @@
               <td>{{ $as->sdm->peran ?? '-' }}</td>
               <td>{{ $as->peran_di_proyek ?? '-' }}</td>
               <td>
-                @if($role === 'site manager')
+                @if($isSiteManager)
                   <form action="{{ route('project.sdm.destroy', [$project->id, $as->id]) }}"
                         method="POST">
                     @csrf

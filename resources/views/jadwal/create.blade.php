@@ -2,12 +2,31 @@
 @section('title','Tambah Jadwal')
 
 @section('content')
+
+{{-- HAK AKSES --}}
+@if(auth()->user()->role !== 'site manager')
+  <div class="alert alert-danger">
+    Anda tidak memiliki hak akses untuk menambah jadwal tahapan.
+  </div>
+  @php return; @endphp
+@endif
+
 <div class="card">
-  <div class="card-header"><h5>Tambah Jadwal Tahap</h5></div>
+  <div class="card-header">
+    <h5>Tambah Jadwal Tahap</h5>
+  </div>
+
   <div class="card-body">
 
+    {{-- ERROR --}}
     @if($errors->any())
-      <div class="alert alert-danger">{{ $errors->first() }}</div>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+          @endforeach
+        </ul>
+      </div>
     @endif
 
     <form action="{{ route('jadwal.store') }}" method="POST">
@@ -35,12 +54,17 @@
       <div class="row mt-3">
         <div class="col-md-4">
           <label>Durasi (hari)</label>
-          <input type="number" name="durasi_hari" class="form-control" min="1" value="{{ old('durasi_hari', 1) }}" required>
+          <input type="number" name="durasi_hari" class="form-control"
+                 min="1" required value="{{ old('durasi_hari',1) }}">
         </div>
+
         <div class="col-md-8">
           <label>Tanggal Mulai Tahap</label>
-          <input type="date" name="tanggal_mulai" id="tglMulai" class="form-control" required value="{{ old('tanggal_mulai') }}">
-          <small class="text-muted">Tanggal otomatis dibatasi sesuai tanggal proyek.</small>
+          <input type="date" name="tanggal_mulai" id="tglMulai"
+                 class="form-control" required value="{{ old('tanggal_mulai') }}">
+          <small class="text-muted">
+            Tanggal otomatis dibatasi sesuai tanggal proyek
+          </small>
         </div>
       </div>
 
@@ -54,19 +78,26 @@
 
 <script>
 const projectSelect = document.getElementById('projectSelect');
-const phaseSelect = document.getElementById('phaseSelect');
-const tglMulai = document.getElementById('tglMulai');
+const phaseSelect   = document.getElementById('phaseSelect');
+const tglMulai      = document.getElementById('tglMulai');
 
 async function loadPhases(projectId) {
   phaseSelect.innerHTML = '<option value="">Loading...</option>';
+
   const res = await fetch(`/jadwal/phases/${projectId}`);
+  if (!res.ok) {
+    alert('Gagal memuat data tahapan');
+    return;
+  }
+
   const data = await res.json();
 
-  // set min/max date input sesuai tanggal proyek
   tglMulai.min = data.project.tanggal_mulai;
   tglMulai.max = data.project.tanggal_selesai;
 
-  if (!tglMulai.value) tglMulai.value = data.project.tanggal_mulai;
+  if (!tglMulai.value) {
+    tglMulai.value = data.project.tanggal_mulai;
+  }
 
   phaseSelect.innerHTML = '<option value="">-- pilih tahapan --</option>';
   data.phases.forEach(p => {
@@ -79,7 +110,15 @@ async function loadPhases(projectId) {
 
 projectSelect.addEventListener('change', () => {
   const pid = projectSelect.value;
-  if (!pid) return;
+
+  if (!pid) {
+    phaseSelect.innerHTML = '<option value="">-- pilih proyek dulu --</option>';
+    tglMulai.value = '';
+    tglMulai.removeAttribute('min');
+    tglMulai.removeAttribute('max');
+    return;
+  }
+
   loadPhases(pid);
 });
 

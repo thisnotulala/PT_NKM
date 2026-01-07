@@ -3,16 +3,27 @@
 
 @section('content')
 <div class="card">
-  <div class="card-header"><h5>Ajukan Peminjaman Equipment</h5></div>
+  <div class="card-header">
+    <h5>Ajukan Peminjaman Equipment</h5>
+  </div>
+
   <div class="card-body">
 
+    {{-- ERROR VALIDASI --}}
     @if($errors->any())
-      <div class="alert alert-danger">{{ $errors->first() }}</div>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          @foreach($errors->all() as $err)
+            <li>{{ $err }}</li>
+          @endforeach
+        </ul>
+      </div>
     @endif
 
     <form action="{{ route('equipment_loans.store') }}" method="POST">
       @csrf
 
+      {{-- PROYEK --}}
       <div class="form-group">
         <label>Proyek</label>
         <select name="project_id" class="form-control" required>
@@ -25,11 +36,17 @@
         </select>
       </div>
 
+      {{-- TANGGAL --}}
       <div class="form-group mt-3">
         <label>Tanggal Pinjam</label>
-        <input type="date" name="tanggal_pinjam" class="form-control" required value="{{ old('tanggal_pinjam', date('Y-m-d')) }}">
+        <input type="date"
+               name="tanggal_pinjam"
+               class="form-control"
+               required
+               value="{{ old('tanggal_pinjam', date('Y-m-d')) }}">
       </div>
 
+      {{-- CATATAN --}}
       <div class="form-group mt-3">
         <label>Catatan (opsional)</label>
         <textarea name="catatan" class="form-control">{{ old('catatan') }}</textarea>
@@ -38,6 +55,7 @@
       <hr>
       <h6>Item Alat</h6>
 
+      {{-- ITEM --}}
       <div id="items">
         <div class="row item-row mt-2">
           <div class="col-md-8">
@@ -45,23 +63,38 @@
             <select name="items[0][equipment_id]" class="form-control" required>
               <option value="">-- pilih alat --</option>
               @foreach($equipment as $eq)
-                <option value="{{ $eq->id }}">
-                  {{ $eq->nama_alat }} (stok: {{ $eq->stok }} {{ $eq->satuan->nama_satuan ?? '' }})
+                <option value="{{ $eq->id }}"
+                        {{ $eq->stok == 0 ? 'disabled' : '' }}>
+                  {{ $eq->nama_alat }}
+                  (stok: {{ $eq->stok }} {{ $eq->satuan->nama_satuan ?? '' }})
                 </option>
               @endforeach
             </select>
           </div>
+
           <div class="col-md-2">
             <label>Qty</label>
-            <input type="number" name="items[0][qty]" class="form-control" min="1" value="1" required>
+            <input type="number"
+                   name="items[0][qty]"
+                   class="form-control"
+                   min="1"
+                   value="1"
+                   required>
           </div>
+
           <div class="col-md-2 d-flex align-items-end">
-            <button type="button" class="btn btn-danger btn-block" onclick="removeRow(this)">Hapus</button>
+            <button type="button"
+                    class="btn btn-danger btn-block"
+                    onclick="removeRow(this)">
+              Hapus
+            </button>
           </div>
         </div>
       </div>
 
-      <button type="button" class="btn btn-secondary mt-3" onclick="addRow()">+ Tambah Item</button>
+      <button type="button" class="btn btn-secondary mt-3" onclick="addRow()">
+        + Tambah Item
+      </button>
 
       <div class="mt-4">
         <button class="btn btn-maroon">Kirim Pengajuan</button>
@@ -83,16 +116,30 @@ function addRow() {
         <select name="items[${idx}][equipment_id]" class="form-control" required>
           <option value="">-- pilih alat --</option>
           @foreach($equipment as $eq)
-            <option value="{{ $eq->id }}">{{ $eq->nama_alat }} (stok: {{ $eq->stok }} {{ $eq->satuan->nama_satuan ?? '' }})</option>
+            <option value="{{ $eq->id }}" {{ $eq->stok == 0 ? 'disabled' : '' }}>
+              {{ $eq->nama_alat }}
+              (stok: {{ $eq->stok }} {{ $eq->satuan->nama_satuan ?? '' }})
+            </option>
           @endforeach
         </select>
       </div>
+
       <div class="col-md-2">
         <label>Qty</label>
-        <input type="number" name="items[${idx}][qty]" class="form-control" min="1" value="1" required>
+        <input type="number"
+               name="items[${idx}][qty]"
+               class="form-control"
+               min="1"
+               value="1"
+               required>
       </div>
+
       <div class="col-md-2 d-flex align-items-end">
-        <button type="button" class="btn btn-danger btn-block" onclick="removeRow(this)">Hapus</button>
+        <button type="button"
+                class="btn btn-danger btn-block"
+                onclick="removeRow(this)">
+          Hapus
+        </button>
       </div>
     </div>
   `;
