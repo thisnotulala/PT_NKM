@@ -51,9 +51,4 @@ class SdmController extends Controller
         return redirect()->route('sdm.index')->with('success', 'SDM berhasil diupdate.');
     }
 
-    public function destroy(Sdm $sdm)
-    {
-        $sdm->delete();
-        return redirect()->route('sdm.index')->with('success', 'SDM berhasil dihapus.');
-    }
 }

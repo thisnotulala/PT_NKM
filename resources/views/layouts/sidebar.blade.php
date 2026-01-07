@@ -51,8 +51,8 @@
                 </li>
 
                 <!-- SATUAN -->
-                {{-- SATUAN - hanya administrasi --}}
-                @if(auth()->user()->role === 'administrasi')
+                {{-- SATUAN: site manager & administrasi --}}
+                @if(in_array(auth()->user()->role, ['site manager','administrasi']))
                 <li class="nav-item">
                     <a href="{{ route('satuan.index') }}"
                     class="nav-link {{ request()->is('satuan*') ? 'active' : '' }}">

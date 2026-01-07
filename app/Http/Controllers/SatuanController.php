@@ -9,8 +9,7 @@ class SatuanController extends Controller
 {
     public function __construct()
     {
-        // ini akan jalan setelah auth middleware, aman
-        $this->middleware(['auth', 'role:administrasi']);
+        $this->middleware(['auth', 'role:site manager,administrasi']);
     }
 
     public function index()
@@ -49,11 +48,5 @@ class SatuanController extends Controller
         $satuan->update($data);
 
         return redirect()->route('satuan.index')->with('success', 'Satuan berhasil diupdate.');
-    }
-
-    public function destroy(Satuan $satuan)
-    {
-        $satuan->delete();
-        return redirect()->route('satuan.index')->with('success', 'Satuan berhasil dihapus.');
     }
 }

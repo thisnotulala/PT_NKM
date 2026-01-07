@@ -43,15 +43,6 @@
                                title="Edit SDM">
                                 <i class="fas fa-pen"></i>
                             </a>
-
-                            <form action="{{ route('sdm.destroy', $sdm->id) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button onclick="return confirm('Hapus SDM ini?')"
-                                        class="btn-action btn-delete"
-                                        title="Hapus SDM">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </form>
                         </div>
                     </td>

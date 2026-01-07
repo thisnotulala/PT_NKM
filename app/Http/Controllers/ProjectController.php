@@ -164,19 +164,14 @@ class ProjectController extends Controller
 
         return redirect()->route('project.index')->with('success', 'Proyek berhasil diupdate.');
     }
-
-    public function destroy(Project $project)
+    
+    public function __construct()
     {
-        if ($project->dokumen && Storage::disk('public')->exists($project->dokumen)) {
-            Storage::disk('public')->delete($project->dokumen);
-        }
+        $this->middleware('auth');
 
-        if ($project->rab_path && Storage::disk('public')->exists($project->rab_path)) {
-            Storage::disk('public')->delete($project->rab_path);
-        }
-        
-        $project->delete();
-
-        return redirect()->route('project.index')->with('success', 'Proyek berhasil dihapus.');
+        // tambah & edit hanya role tertentu
+        $this->middleware('role:site manager,administrasi')
+            ->only(['create', 'store', 'edit', 'update']);
     }
+
 }

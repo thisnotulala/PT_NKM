@@ -34,10 +34,7 @@
             <div class="d-flex" style="gap:8px; flex-wrap:wrap;">
               <a href="{{ route('project.show',$p->id) }}" class="btn btn-sm btn-secondary">Detail</a>
               <a href="{{ route('project.edit',$p->id) }}" class="btn btn-sm btn-warning">Edit</a>
-              <form action="{{ route('project.destroy',$p->id) }}" method="POST">
-                @csrf @method('DELETE')
-                <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus proyek ini?')">Hapus</button>
-              </form>
+            
             </div>
           </td>
         </tr>

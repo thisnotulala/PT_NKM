@@ -23,15 +23,7 @@
   <div class="card-body">
 
     @if(session('success'))
-      <div class="alert alert-success">
-        {{ session('success') }}
-      </div>
-    @endif
-
-    @if(session('error'))
-      <div class="alert alert-danger">
-        {{ session('error') }}
-      </div>
+      <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
     <div class="table-responsive">
@@ -41,7 +33,7 @@
             <th width="50" class="text-center">No</th>
             <th>Nama</th>
             <th>Email</th>
-            <th width="120" class="text-center">Aksi</th>
+            <th width="80" class="text-center">Aksi</th>
           </tr>
         </thead>
 
@@ -52,34 +44,12 @@
             <td>{{ $u->name }}</td>
             <td>{{ $u->email }}</td>
 
-            {{-- AKSI --}}
             <td class="text-center">
-              <div class="action-group">
-
-                {{-- EDIT --}}
-                <a href="{{ route('user.edit', $u->id) }}"
-                   class="btn-action btn-edit"
-                   title="Edit User">
-                  <i class="fas fa-edit"></i>
-                </a>
-
-                {{-- DELETE --}}
-                @if(auth()->id() !== $u->id)
-                <form action="{{ route('user.destroy', $u->id) }}"
-                      method="POST"
-                      onsubmit="return confirm('Hapus user ini?')">
-                  @csrf
-                  @method('DELETE')
-
-                  <button type="submit"
-                          class="btn-action btn-delete"
-                          title="Hapus User">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </form>
-                @endif
-
-              </div>
+              <a href="{{ route('user.edit', $u->id) }}"
+                 class="btn-action btn-edit"
+                 title="Edit User">
+                <i class="fas fa-edit"></i>
+              </a>
             </td>
           </tr>
           @empty

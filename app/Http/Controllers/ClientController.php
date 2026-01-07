@@ -75,16 +75,5 @@ class ClientController extends Controller
             ->with('success', 'Client berhasil diperbarui');
     }
 
-    public function destroy(Client $client)
-    {
-        if (!auth()->check() || auth()->user()->role !== 'site manager') {
-            abort(403, 'AKSES DITOLAK');
-        }
-
-        $client->delete();
-
-        return redirect()->route('client.index')
-            ->with('success', 'Client berhasil dihapus');
-    }
 
 }

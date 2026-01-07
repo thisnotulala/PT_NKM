@@ -49,18 +49,6 @@
                 </a>
               @endif
 
-              {{-- Hapus: hanya site manager --}}
-              @if(auth()->user()->role === 'site manager')
-                <form action="{{ route('equipment.destroy', $eq->id) }}" method="POST"
-                      onsubmit="return confirm('Hapus alat ini?')">
-                  @csrf
-                  @method('DELETE')
-                  <button type="submit" class="btn-action btn-delete" title="Hapus">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </form>
-              @endif
-
               {{-- Jika kepala lapangan: tampilkan strip biar tidak kosong --}}
               @if(auth()->user()->role === 'kepala lapangan')
                 <span class="text-muted">-</span>

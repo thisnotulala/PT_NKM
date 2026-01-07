@@ -7,25 +7,16 @@
     <div class="card-header d-flex align-items-center">
         <h5 class="mb-0">Data Client</h5>
 
-        {{-- Tambah client: site manager & administrasi --}}
-        @if(in_array(auth()->user()->role, ['site manager','administrasi']))
-            <a href="{{ route('client.create') }}"
-               class="btn btn-maroon ml-auto">
-                <i class="fas fa-plus"></i> Tambah Client
-            </a>
-        @endif
+        <a href="{{ route('client.create') }}"
+           class="btn btn-maroon ml-auto">
+            <i class="fas fa-plus"></i> Tambah Client
+        </a>
     </div>
 
     <div class="card-body">
         @if(session('success'))
             <div class="alert alert-success">
                 {{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
             </div>
         @endif
 
@@ -36,7 +27,7 @@
                     <th>Nama Client</th>
                     <th>Alamat</th>
                     <th>No. Telepon</th>
-                    <th width="140">Aksi</th>
+                    <th width="80">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -48,31 +39,11 @@
                     <td>{{ $client->nomor_telepon }}</td>
                     <td>
                         <div class="action-group">
-
-                            {{-- Edit: site manager & administrasi --}}
-                            @if(in_array(auth()->user()->role, ['site manager','administrasi']))
-                                <a href="{{ route('client.edit', $client->id) }}"
-                                   class="btn-action btn-edit"
-                                   title="Edit Client">
-                                    <i class="fas fa-pen"></i>
-                                </a>
-                            @endif
-
-                            {{-- Hapus: hanya site manager --}}
-                            @if(auth()->user()->role === 'site manager')
-                                <form action="{{ route('client.destroy', $client->id) }}"
-                                      method="POST"
-                                      onsubmit="return confirm('Hapus client ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="btn-action btn-delete"
-                                            title="Hapus Client">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            @endif
-
+                            <a href="{{ route('client.edit', $client->id) }}"
+                               class="btn-action btn-edit"
+                               title="Edit Client">
+                                <i class="fas fa-pen"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>
