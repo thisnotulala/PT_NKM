@@ -23,15 +23,19 @@ class ProjectProgressController extends Controller
             abort(403);
         }
 
-        $project->load(['client','phases' => function($q){
-            $q->orderBy('urutan');
-        }]);
+        $project->load([
+            'client',
+            'phases' => function($q){
+                $q->orderBy('urutan');
+            }
+        ]);
 
         $progressTotal = $project->phases->sum(function ($p) {
             return ($p->persen * $p->progress) / 100;
         });
 
-        $logs = ProjectPhaseProgressLog::with(['phase','photos'])
+        // ✅ load sdms untuk ditampilkan di log
+        $logs = ProjectPhaseProgressLog::with(['phase','photos','sdms'])
             ->where('project_id', $project->id)
             ->latest('tanggal_update')
             ->latest()
@@ -60,7 +64,9 @@ class ProjectProgressController extends Controller
                 ->with('error', 'Tahapan ini sudah 100%, tidak bisa diupdate.');
         }
 
-        return view('project.progress.create', compact('project','phase'));
+        $sdms = \App\Models\Sdm::orderBy('nama')->get();
+
+        return view('project.progress.create', compact('project','phase','sdms'));
     }
 
     /**
@@ -87,6 +93,11 @@ class ProjectProgressController extends Controller
             'tanggal_update' => 'required|date',
             'progress'       => 'required|integer|min:0|max:100',
             'catatan'        => 'nullable|string',
+
+            // ✅ SDM yang bekerja (boleh kosong)
+            'sdm_ids'        => 'nullable|array',
+            'sdm_ids.*'      => 'exists:sdms,id',
+
             'foto'           => 'nullable|array|max:5',
             'foto.*'         => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
@@ -103,11 +114,16 @@ class ProjectProgressController extends Controller
                 'project_id'       => $project->id,
                 'project_phase_id' => $phase->id,
                 'tanggal_update'   => $data['tanggal_update'],
-                'progress'         => (int)$data['progress'],
+                'progress'         => (int) $data['progress'],
                 'catatan'          => $data['catatan'] ?? null,
                 'created_by'       => auth()->id(),
             ]);
 
+            // ✅ simpan relasi SDM ke log (pivot)
+            $sdmIds = $data['sdm_ids'] ?? [];
+            $log->sdms()->sync($sdmIds);
+
+            // foto
             if ($request->hasFile('foto')) {
                 foreach ($request->file('foto') as $file) {
                     $path = $file->store(
@@ -122,8 +138,9 @@ class ProjectProgressController extends Controller
                 }
             }
 
+            // update phase
             $phase->update([
-                'progress'         => (int)$data['progress'],
+                'progress'         => (int) $data['progress'],
                 'last_progress_at' => $data['tanggal_update'],
             ]);
         });
@@ -132,6 +149,7 @@ class ProjectProgressController extends Controller
             ->route('project.progress.index', $project->id)
             ->with('success', 'Progress berhasil disimpan.');
     }
+
 
     /**
      * PILIH PROYEK

@@ -53,6 +53,11 @@
       <a href="{{ route('jadwal.index') }}" class="btn btn-outline-secondary">
         <i class="fas fa-calendar-alt"></i> Lihat Semua Jadwal
       </a>
+
+      {{-- tombol ke progress (biar user langsung ke tempat laporan SDM) --}}
+      <a href="{{ route('project.progress.index', $project->id) }}" class="btn btn-maroon">
+        <i class="fas fa-tasks"></i> Lihat Progress
+      </a>
     </div>
 
     <hr>
@@ -83,95 +88,6 @@
         </tr>
       </tbody>
     </table>
-
-    <hr>
-
-    {{-- SDM PROYEK --}}
-    <h6>Tim SDM</h6>
-
-    @if(session('success'))
-      <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-      <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
-    <div class="card mb-3">
-      <div class="card-body">
-
-        {{-- FORM TAMBAH SDM --}}
-        @if(in_array($role, ['site manager','administrasi']))
-        <form action="{{ route('project.sdm.store', $project->id) }}" method="POST" class="mb-3">
-          @csrf
-          <div class="row">
-            <div class="col-md-5">
-              <label>SDM</label>
-              <select name="sdm_id" class="form-control" required>
-                <option value="">-- pilih SDM --</option>
-                @foreach($sdms as $s)
-                  <option value="{{ $s->id }}">
-                    {{ $s->nama }} - {{ $s->peran }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
-
-            <div class="col-md-5">
-              <label>Peran di Proyek (opsional)</label>
-              <input type="text" name="peran_di_proyek" class="form-control">
-            </div>
-
-            <div class="col-md-2 d-flex align-items-end">
-              <button class="btn btn-maroon btn-block">Tambah</button>
-            </div>
-          </div>
-        </form>
-        @endif
-
-        {{-- LIST SDM --}}
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th width="50">No</th>
-              <th>Nama</th>
-              <th>Peran (Master)</th>
-              <th>Peran di Proyek</th>
-              <th width="140">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            @forelse($project->projectSdms as $as)
-            <tr>
-              <td>{{ $loop->iteration }}</td>
-              <td>{{ $as->sdm->nama ?? '-' }}</td>
-              <td>{{ $as->sdm->peran ?? '-' }}</td>
-              <td>{{ $as->peran_di_proyek ?? '-' }}</td>
-              <td>
-                @if($isSiteManager)
-                  <form action="{{ route('project.sdm.destroy', [$project->id, $as->id]) }}"
-                        method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button class="btn btn-danger btn-sm"
-                      onclick="return confirm('Hapus SDM dari proyek ini?')">
-                      Hapus
-                    </button>
-                  </form>
-                @else
-                  <span class="text-muted">-</span>
-                @endif
-              </td>
-            </tr>
-            @empty
-            <tr>
-              <td colspan="5" class="text-center">Belum ada SDM ditugaskan</td>
-            </tr>
-            @endforelse
-          </tbody>
-        </table>
-
-      </div>
-    </div>
 
     <a href="{{ route('project.index') }}" class="btn btn-secondary">Kembali</a>
   </div>

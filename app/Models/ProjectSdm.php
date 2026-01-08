@@ -14,13 +14,17 @@ class ProjectSdm extends Model
         'peran_di_proyek',
     ];
 
-    public function project()
+    // Project.php
+    public function sdms()
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsToMany(\App\Models\Sdm::class, 'project_sdms')
+            ->withTimestamps();
     }
 
-    public function sdm()
+    // Sdm.php
+    public function projects()
     {
-        return $this->belongsTo(Sdm::class);
+        return $this->belongsToMany(\App\Models\Project::class, 'project_sdms')
+            ->withTimestamps();
     }
 }

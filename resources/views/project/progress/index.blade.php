@@ -92,6 +92,7 @@
           <th width="140">Tanggal</th>
           <th>Tahapan</th>
           <th width="100">Progress</th>
+          <th width="220">SDM</th>
           <th>Catatan</th>
           <th width="200">Foto</th>
         </tr>
@@ -102,17 +103,31 @@
           <td>{{ $l->tanggal_update }}</td>
           <td>{{ $l->phase->nama_tahapan }}</td>
           <td class="text-center">{{ $l->progress }}%</td>
+
+          {{-- ✅ SDM yang bekerja --}}
+          <td>
+            @if($l->sdms && $l->sdms->count())
+              @foreach($l->sdms as $s)
+                <span class="badge badge-secondary" style="margin-right:4px;">
+                  {{ $s->nama }}
+                </span>
+              @endforeach
+            @else
+              <span class="text-muted">-</span>
+            @endif
+          </td>
+
           <td>{{ $l->catatan ?? '-' }}</td>
+
           <td>
             @forelse($l->photos as $p)
-              <a href="{{ asset('storage/'.$p->photo_path) }}" target="_blank">
-                Lihat
-              </a><br>
+              <a href="{{ asset('storage/'.$p->photo_path) }}" target="_blank">Lihat</a><br>
             @empty
               -
             @endforelse
           </td>
         </tr>
+
         @empty
         <tr>
           <td colspan="5" class="text-center">

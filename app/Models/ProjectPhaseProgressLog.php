@@ -6,8 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectPhaseProgressLog extends Model
 {
+    protected $table = 'project_phase_progress_logs';
+
     protected $fillable = [
-        'project_id','project_phase_id','tanggal_update','progress','catatan','created_by'
+        'project_id',
+        'project_phase_id',
+        'tanggal_update',
+        'progress',
+        'catatan',
+        'created_by',
+    ];
+
+    protected $casts = [
+        'tanggal_update' => 'date',
+        'progress' => 'integer',
     ];
 
     public function project()
@@ -23,5 +35,16 @@ class ProjectPhaseProgressLog extends Model
     public function photos()
     {
         return $this->hasMany(ProjectPhaseProgressPhoto::class, 'log_id');
+    }
+
+    // ✅ SDM yang bekerja pada log ini
+    public function sdms()
+    {
+        return $this->belongsToMany(
+            \App\Models\Sdm::class,
+            'project_phase_progress_log_sdms',
+            'log_id',
+            'sdm_id'
+        )->withTimestamps();
     }
 }
