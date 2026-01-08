@@ -99,6 +99,69 @@
         @endif
       </div>
 
+      {{-- =========================
+          PEMAKAIAN MATERIAL (MULTI ROW)
+          ========================= --}}
+      <hr>
+      <h6>Pemakaian Material</h6>
+      <small class="text-muted">
+        Pilih material dari estimasi proyek, lalu isi jumlah yang dipakai.
+      </small>
+
+      <div class="table-responsive mt-2">
+        <table class="table table-bordered" id="materialTable">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th width="180">Qty Pakai</th>
+              <th width="60"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{-- default 1 row --}}
+            <tr>
+              <td>
+                <select name="materials[0][project_material_id]"
+                        class="form-control material-select"
+                        required>
+                  <option value="">-- pilih material --</option>
+                  @foreach($projectMaterials as $pm)
+                    <option value="{{ $pm->id }}">
+                      {{ $pm->nama_material ?? $pm->nama }}
+                      @if($pm->satuan ?? false)
+                        ({{ $pm->satuan }})
+                      @endif
+                    </option>
+                  @endforeach
+                </select>
+              </td>
+              <td>
+                <input type="number"
+                      name="materials[0][qty_pakai]"
+                      class="form-control"
+                      min="0"
+                      step="0.01"
+                      placeholder="0">
+              </td>
+              <td class="text-center">
+                <button type="button"
+                        class="btn btn-danger btn-sm remove-row"
+                        disabled>
+                  ✕
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <button type="button"
+              class="btn btn-outline-primary btn-sm"
+              id="addMaterialRow">
+        + Tambah Material
+      </button>
+
+
       {{-- FOTO --}}
       <div class="form-group mt-4">
         <label>Upload Foto (maks 5 foto)</label>
@@ -154,4 +217,6 @@
     }
   });
 </script>
+
+
 @endsection

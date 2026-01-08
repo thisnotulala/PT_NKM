@@ -52,6 +52,10 @@ class Project extends Model
     {
         return $this->hasMany(\App\Models\ProjectExpense::class);
     }
+    public function materials()
+    {
+        return $this->hasMany(\App\Models\ProjectMaterial::class);
+    }
 
 
 }

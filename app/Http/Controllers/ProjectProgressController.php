@@ -6,6 +6,12 @@ use App\Models\Project;
 use App\Models\ProjectPhase;
 use App\Models\ProjectPhaseProgressLog;
 use App\Models\ProjectPhaseProgressPhoto;
+use App\Models\Sdm; // ✅ tambahan
+
+// ✅ tambahan: untuk material
+use App\Models\ProjectMaterial;
+use App\Models\ProjectMaterialUsage;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -34,8 +40,14 @@ class ProjectProgressController extends Controller
             return ($p->persen * $p->progress) / 100;
         });
 
-        // ✅ load sdms untuk ditampilkan di log
-        $logs = ProjectPhaseProgressLog::with(['phase','photos','sdms'])
+        // ✅ load sdms + material usages untuk ditampilkan di log
+        $logs = ProjectPhaseProgressLog::with([
+                'phase',
+                'photos',
+                'sdms',
+                // ✅ tambahan: pemakaian material per log
+                'materialUsages.projectMaterial'
+            ])
             ->where('project_id', $project->id)
             ->latest('tanggal_update')
             ->latest()
@@ -64,9 +76,15 @@ class ProjectProgressController extends Controller
                 ->with('error', 'Tahapan ini sudah 100%, tidak bisa diupdate.');
         }
 
-        $sdms = \App\Models\Sdm::orderBy('nama')->get();
+        $sdms = Sdm::orderBy('nama')->get();
 
-        return view('project.progress.create', compact('project','phase','sdms'));
+        // ✅ tambahan: ambil material estimasi untuk proyek ini
+        // (disesuaikan kalau nama tabel/kolom/relasi berbeda)
+        $projectMaterials = ProjectMaterial::where('project_id', $project->id)
+            ->orderBy('id')
+            ->get();
+
+        return view('project.progress.create', compact('project','phase','sdms','projectMaterials'));
     }
 
     /**
@@ -98,6 +116,11 @@ class ProjectProgressController extends Controller
             'sdm_ids'        => 'nullable|array',
             'sdm_ids.*'      => 'exists:sdms,id',
 
+            // ✅ tambahan: pemakaian material (boleh kosong)
+            // format: materials[PROJECT_MATERIAL_ID] = qty_pakai
+            'materials'      => 'nullable|array',
+            'materials.*'    => 'nullable|numeric|min:0',
+
             'foto'           => 'nullable|array|max:5',
             'foto.*'         => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
@@ -114,7 +137,7 @@ class ProjectProgressController extends Controller
                 'project_id'       => $project->id,
                 'project_phase_id' => $phase->id,
                 'tanggal_update'   => $data['tanggal_update'],
-                'progress'         => (int) $data['progress'],
+                'progress'         => (int)$data['progress'],
                 'catatan'          => $data['catatan'] ?? null,
                 'created_by'       => auth()->id(),
             ]);
@@ -122,6 +145,29 @@ class ProjectProgressController extends Controller
             // ✅ simpan relasi SDM ke log (pivot)
             $sdmIds = $data['sdm_ids'] ?? [];
             $log->sdms()->sync($sdmIds);
+
+            // ✅ tambahan: simpan pemakaian material per log
+            // materials key = project_material_id, value = qty_pakai
+            $materials = $data['materials'] ?? [];
+            foreach ($materials as $projectMaterialId => $qtyPakai) {
+                $qty = (float) ($qtyPakai ?? 0);
+
+                // skip kalau kosong / 0
+                if ($qty <= 0) continue;
+
+                // pastikan material itu milik project ini (biar aman)
+                $pm = ProjectMaterial::where('id', $projectMaterialId)
+                    ->where('project_id', $project->id)
+                    ->first();
+
+                if (!$pm) continue;
+
+                ProjectMaterialUsage::create([
+                    'progress_log_id'   => $log->id,
+                    'project_material_id' => $pm->id,
+                    'qty_pakai'         => $qty,
+                ]);
+            }
 
             // foto
             if ($request->hasFile('foto')) {
@@ -140,7 +186,7 @@ class ProjectProgressController extends Controller
 
             // update phase
             $phase->update([
-                'progress'         => (int) $data['progress'],
+                'progress'         => (int)$data['progress'],
                 'last_progress_at' => $data['tanggal_update'],
             ]);
         });
@@ -149,7 +195,6 @@ class ProjectProgressController extends Controller
             ->route('project.progress.index', $project->id)
             ->with('success', 'Progress berhasil disimpan.');
     }
-
 
     /**
      * PILIH PROYEK

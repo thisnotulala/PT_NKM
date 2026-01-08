@@ -136,6 +136,31 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/project/{project}', [ProjectController::class, 'show'])->name('project.show');
 
+    /*
+    |--------------------------------------------------------------------------
+    | PROJECT MATERIALS (Rencana / Estimasi per Proyek)
+    | - site manager & administrasi
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:site manager,administrasi')->group(function () {
+
+        // halaman daftar material untuk 1 proyek
+        Route::get('/project/{project}/materials', [ProjectMaterialController::class, 'index'])
+            ->name('project.materials.index');
+
+        // tambah material ke proyek (estimasi)
+        Route::post('/project/{project}/materials', [ProjectMaterialController::class, 'store'])
+            ->name('project.materials.store');
+
+        // update estimasi (qty_rencana, harga, dll)
+        Route::put('/project/{project}/materials/{projectMaterial}', [ProjectMaterialController::class, 'update'])
+            ->name('project.materials.update');
+
+        // hapus material dari proyek
+        Route::delete('/project/{project}/materials/{projectMaterial}', [ProjectMaterialController::class, 'destroy'])
+            ->name('project.materials.destroy');
+    });
+
     // EQUIPMENT LOANS
 
     // Ajukan peminjaman (HANYA kepala lapangan)
@@ -232,6 +257,22 @@ Route::middleware('auth')->group(function () {
         Route::post('/project/{project}/phase/{phase}/progress', [ProjectProgressController::class, 'store'])
             ->name('project.progress.store');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROGRESS MATERIAL USAGES (opsional: edit/hapus per log)
+    | - kepala lapangan
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:kepala lapangan')->group(function () {
+
+        Route::put('/progress-log/{log}/materials', [ProjectMaterialUsageController::class, 'update'])
+            ->name('progress.materials.update');
+
+        Route::delete('/progress-log/{log}/materials/{usage}', [ProjectMaterialUsageController::class, 'destroy'])
+            ->name('progress.materials.destroy');
+    });
+
 
     /*
     |--------------------------------------------------------------------------

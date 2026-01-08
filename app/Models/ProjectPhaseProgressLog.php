@@ -47,4 +47,10 @@ class ProjectPhaseProgressLog extends Model
             'sdm_id'
         )->withTimestamps();
     }
+
+    public function materialUsages()
+    {
+        return $this->hasMany(\App\Models\ProjectMaterialUsage::class, 'progress_log_id');
+    }
+
 }
