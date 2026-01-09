@@ -21,4 +21,14 @@ class ProjectMaterialUsage extends Model
     {
         return $this->belongsTo(ProjectMaterial::class, 'project_material_id');
     }
+
+    public function progressLog()
+    {
+        return $this->belongsTo(ProjectPhaseProgressLog::class, 'progress_log_id');
+    }
+
+    public function projectMaterial()
+    {
+        return $this->belongsTo(ProjectMaterial::class, 'project_material_id');
+    }
 }

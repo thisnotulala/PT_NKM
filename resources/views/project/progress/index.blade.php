@@ -119,22 +119,22 @@
           </td>
 
           {{-- MATERIAL --}}
-        <td>
-          @if($l->materialUsages && $l->materialUsages->count())
-            <ul class="mb-0 pl-3">
-              @foreach($l->materialUsages as $mu)
-                <li>
-                  {{ $mu->projectMaterial->nama_material ?? $mu->projectMaterial->nama }}
-                  :
-                  <b>{{ $mu->qty_pakai }}</b>
-                  {{ $mu->projectMaterial->satuan ?? '' }}
-                </li>
-              @endforeach
-            </ul>
-          @else
-            <span class="text-muted">-</span>
-          @endif
-        </td>
+          <td>
+            @if($l->materialUsages && $l->materialUsages->count())
+              <ul class="mb-0 pl-3">
+                @foreach($l->materialUsages as $mu)
+                  <li>
+                    {{ $mu->projectMaterial->nama_material ?? $mu->projectMaterial->nama }}
+                    :
+                    <b>{{ $mu->qty_pakai }}</b>
+                    {{ $mu->projectMaterial->satuan ?? '' }}
+                  </li>
+                @endforeach
+              </ul>
+            @else
+              <span class="text-muted">-</span>
+            @endif
+          </td>
 
 
           <td>{{ $l->catatan ?? '-' }}</td>

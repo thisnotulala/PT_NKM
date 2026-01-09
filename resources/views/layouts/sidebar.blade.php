@@ -97,6 +97,17 @@
                     </a>
                 </li>
 
+                <!-- MATERIAL PROYEK (SITE MANAGER & ADMINISTRASI) -->
+                @if(in_array($role, ['site manager','administrasi']))
+                <li class="nav-item">
+                    <a href="{{ route('project.materials.pick') }}"
+                    class="nav-link {{ request()->routeIs('project.materials.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-boxes"></i>
+                        <p>Material Proyek</p>
+                    </a>
+                </li>
+                @endif
+
                 <!-- PENGELUARAN PROYEK (❗SITE MANAGER & ADMINISTRASI SAJA) -->
                 @if(in_array($role, ['site manager','administrasi']))
                 <li class="nav-item">

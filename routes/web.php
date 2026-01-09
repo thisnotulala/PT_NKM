@@ -18,6 +18,7 @@ use App\Http\Controllers\ProjectSdmController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\SdmController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProjectMaterialController;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,6 +145,10 @@ Route::middleware('auth')->group(function () {
     */
     Route::middleware('role:site manager,administrasi')->group(function () {
 
+        // ✅ pilih proyek dulu
+        Route::get('/materials-proyek', [ProjectMaterialController::class, 'pickProject'])
+            ->name('project.materials.pick');
+
         // halaman daftar material untuk 1 proyek
         Route::get('/project/{project}/materials', [ProjectMaterialController::class, 'index'])
             ->name('project.materials.index');
@@ -159,6 +164,13 @@ Route::middleware('auth')->group(function () {
         // hapus material dari proyek
         Route::delete('/project/{project}/materials/{projectMaterial}', [ProjectMaterialController::class, 'destroy'])
             ->name('project.materials.destroy');
+
+        // ✅ stok masuk
+        Route::post('/project/{project}/materials/stock', [ProjectMaterialController::class, 'storeStock'])
+            ->name('project.materials.stock.store');
+
+        Route::delete('/project/{project}/materials/stock/{stock}', [ProjectMaterialController::class, 'destroyStock'])
+            ->name('project.materials.stock.destroy');
     });
 
     // EQUIPMENT LOANS

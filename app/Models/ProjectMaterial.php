@@ -23,4 +23,9 @@ class ProjectMaterial extends Model
     {
         return $this->hasMany(ProjectMaterialUsage::class, 'project_material_id');
     }
+
+    public function stocks()
+    {
+        return $this->hasMany(ProjectMaterialStock::class, 'project_material_id');
+    }
 }

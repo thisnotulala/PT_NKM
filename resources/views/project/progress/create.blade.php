@@ -217,6 +217,65 @@
     }
   });
 </script>
-
-
 @endsection
+
+@push('scripts')
+<script>
+  $(document).ready(function () {
+    $('#sdm_ids').select2({
+      placeholder: 'Cari & pilih SDM...',
+      allowClear: true,
+      width: '100%'
+    });
+
+    function initMaterialSelect() {
+      $('.material-select').select2({
+        placeholder: 'Cari material...',
+        width: '100%'
+      });
+    }
+
+    let materialIndex = 1;
+    initMaterialSelect();
+
+    $('#addMaterialRow').on('click', function () {
+      let row = `
+        <tr>
+          <td>
+            <select name="materials[${materialIndex}][project_material_id]"
+                    class="form-control material-select">
+              <option value="">-- pilih material --</option>
+              @foreach($projectMaterials as $pm)
+                <option value="{{ $pm->id }}">
+                  {{ $pm->nama_material }}
+                  @if($pm->satuan) ({{ $pm->satuan }}) @endif
+                </option>
+              @endforeach
+            </select>
+          </td>
+          <td>
+            <input type="number"
+                  name="materials[${materialIndex}][qty_pakai]"
+                  class="form-control"
+                  min="0"
+                  step="0.01"
+                  placeholder="0">
+          </td>
+          <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm remove-row">✕</button>
+          </td>
+        </tr>
+      `;
+
+      $('#materialTable tbody').append(row);
+      materialIndex++;
+      initMaterialSelect();
+    });
+
+    $(document).on('click', '.remove-row', function () {
+      $(this).closest('tr').remove();
+    });
+  });
+</script>
+@endpush
+

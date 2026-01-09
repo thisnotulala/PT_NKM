@@ -118,8 +118,9 @@ class ProjectProgressController extends Controller
 
             // ✅ tambahan: pemakaian material (boleh kosong)
             // format: materials[PROJECT_MATERIAL_ID] = qty_pakai
-            'materials'      => 'nullable|array',
-            'materials.*'    => 'nullable|numeric|min:0',
+            'materials'                          => 'nullable|array',
+            'materials.*.project_material_id'    => 'nullable|integer|exists:project_materials,id',
+            'materials.*.qty_pakai'              => 'nullable|numeric|min:0',
 
             'foto'           => 'nullable|array|max:5',
             'foto.*'         => 'image|mimes:jpg,jpeg,png|max:2048',
@@ -148,24 +149,28 @@ class ProjectProgressController extends Controller
 
             // ✅ tambahan: simpan pemakaian material per log
             // materials key = project_material_id, value = qty_pakai
-            $materials = $data['materials'] ?? [];
-            foreach ($materials as $projectMaterialId => $qtyPakai) {
-                $qty = (float) ($qtyPakai ?? 0);
+            $materialsRows = $data['materials'] ?? [];
 
-                // skip kalau kosong / 0
-                if ($qty <= 0) continue;
+            $aggregated = [];
 
-                // pastikan material itu milik project ini (biar aman)
-                $pm = ProjectMaterial::where('id', $projectMaterialId)
+            foreach ($materialsRows as $row) {
+                $pmId = $row['project_material_id'] ?? null;
+                $qty  = (float) ($row['qty_pakai'] ?? 0);
+
+                // skip kalau row belum lengkap atau qty 0
+                if (!$pmId || $qty <= 0) continue;
+
+                // pastikan material milik project ini
+                $pm = ProjectMaterial::where('id', $pmId)
                     ->where('project_id', $project->id)
                     ->first();
 
                 if (!$pm) continue;
 
                 ProjectMaterialUsage::create([
-                    'progress_log_id'   => $log->id,
+                    'progress_log_id'     => $log->id,
                     'project_material_id' => $pm->id,
-                    'qty_pakai'         => $qty,
+                    'qty_pakai'           => $qty,
                 ]);
             }
 
