@@ -5,48 +5,53 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\ProjectMaterial;
 use App\Models\ProjectMaterialStock;
+use App\Models\ProjectMaterialRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class ProjectMaterialController extends Controller
 {
     public function pickProject()
     {
-        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) {
+        if (!in_array(auth()->user()->role, ['site manager', 'administrasi', 'kepala lapangan'])) {
             abort(403);
         }
 
-        $projects = Project::select('id','nama_proyek')
+        $projects = Project::with('client') // ✅ penting
+            ->select('id', 'nama_proyek', 'client_id') // ✅ client_id wajib ikut kalau pakai select
             ->orderBy('nama_proyek')
             ->get();
 
         return view('project.materials.pick', compact('projects'));
     }
 
-
     /**
      * LIST MATERIAL ESTIMASI PROYEK + RINGKAS STOK/Pakai
      */
     public function index(Project $project)
     {
-        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) {
+        if (!in_array(auth()->user()->role, ['site manager', 'administrasi', 'kepala lapangan'])) {
             abort(403);
         }
 
-        // ✅ material estimasi + total stok masuk + total pakai
         $materials = ProjectMaterial::where('project_id', $project->id)
             ->withSum('stocks as qty_masuk_total', 'qty_masuk')
             ->withSum('usages as qty_pakai_total', 'qty_pakai')
             ->orderBy('nama_material')
             ->get();
 
-        // ✅ riwayat stok masuk terbaru
         $stocks = ProjectMaterialStock::with('projectMaterial')
             ->where('project_id', $project->id)
             ->latest('tanggal')
             ->latest()
             ->get();
 
-        return view('project.materials.index', compact('project', 'materials', 'stocks'));
+        $requests = ProjectMaterialRequest::with('projectMaterial')
+            ->where('project_id', $project->id)
+            ->latest()
+            ->get();
+
+        return view('project.materials.index', compact('project', 'materials', 'stocks', 'requests'));
     }
 
     /**
@@ -97,10 +102,10 @@ class ProjectMaterialController extends Controller
         ]);
 
         $projectMaterial->update([
-            'nama_material' => $data['nama_material'],
-            'satuan' => $data['satuan'] ?? null,
-            'qty_estimasi' => $data['qty_estimasi'],
-            'toleransi_persen' => $data['toleransi_persen'] ?? null,
+            'nama_material'     => $data['nama_material'],
+            'satuan'            => $data['satuan'] ?? null,
+            'qty_estimasi'      => $data['qty_estimasi'],
+            'toleransi_persen'  => $data['toleransi_persen'] ?? null,
         ]);
 
         return back()->with('success', 'Material estimasi berhasil diperbarui.');
@@ -125,7 +130,7 @@ class ProjectMaterialController extends Controller
     }
 
     // ==================================================
-    // ✅ TAMBAHAN: STOK MASUK MATERIAL
+    // ✅ STOK MASUK MATERIAL (BEBAS, BOLEH > ESTIMASI)
     // ==================================================
     public function storeStock(Request $request, Project $project)
     {
@@ -140,7 +145,7 @@ class ProjectMaterialController extends Controller
             'catatan'             => 'nullable|string|max:255',
         ]);
 
-        // ✅ pastikan material milik project ini
+        // pastikan material milik project ini
         $pm = ProjectMaterial::where('id', $data['project_material_id'])
             ->where('project_id', $project->id)
             ->first();
@@ -149,31 +154,7 @@ class ProjectMaterialController extends Controller
             return back()->with('error', 'Material tidak valid untuk proyek ini.');
         }
 
-        // ============================
-        // ✅ KONTROL: batas aman stok
-        // ============================
-        $estimasi = (float) ($pm->qty_estimasi ?? 0);
-        $tol      = (float) ($pm->toleransi_persen ?? 0);
-        $batas    = $estimasi * (1 + ($tol / 100));
-
-        // total stok masuk saat ini (sebelum input baru)
-        $totalMasukSekarang = (float) ProjectMaterialStock::where('project_id', $project->id)
-            ->where('project_material_id', $pm->id)
-            ->sum('qty_masuk');
-
         $qtyInput = (float) $data['qty_masuk'];
-        $totalSetelahInput = $totalMasukSekarang + $qtyInput;
-
-        // ✅ jika melewati batas, catatan WAJIB
-        if ($estimasi > 0 && $totalSetelahInput > $batas) {
-            if (empty($data['catatan'])) {
-                return back()
-                    ->withInput()
-                    ->withErrors([
-                        'catatan' => 'Catatan/alasan wajib diisi karena stok masuk melebihi estimasi (+ toleransi).'
-                    ]);
-            }
-        }
 
         ProjectMaterialStock::create([
             'project_id'          => $project->id,
@@ -184,14 +165,8 @@ class ProjectMaterialController extends Controller
             'created_by'          => auth()->id(),
         ]);
 
-        // ✅ pesan beda kalau melewati batas
-        if ($estimasi > 0 && $totalSetelahInput > $batas) {
-            return back()->with('success', 'Stok masuk tersimpan, namun MELEBIHI estimasi (+ toleransi).');
-        }
-
-        return back()->with('success', 'Stok masuk material berhasil ditambahkan.');
+        return back()->with('success', 'Stok masuk material berhasil ditambahkan (boleh melebihi estimasi).');
     }
-
 
     public function destroyStock(Project $project, ProjectMaterialStock $stock)
     {
@@ -206,5 +181,124 @@ class ProjectMaterialController extends Controller
         $stock->delete();
 
         return back()->with('success', 'Riwayat stok masuk berhasil dihapus.');
+    }
+
+    // ==================================================
+    // ✅ PENGAJUAN MATERIAL (KEPALA LAPANGAN)
+    // ==================================================
+    public function storeRequest(Request $request, Project $project)
+    {
+        if (!in_array(auth()->user()->role, ['kepala lapangan'])) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'project_material_id' => 'required|exists:project_materials,id',
+            'tanggal_pengajuan'   => 'required|date',
+            'qty'                 => 'required|numeric|min:0.01',
+            'catatan'             => 'nullable|string|max:255',
+        ]);
+
+        $pm = ProjectMaterial::where('id', $data['project_material_id'])
+            ->where('project_id', $project->id)
+            ->first();
+
+        if (!$pm) {
+            return back()->with('error', 'Material tidak valid untuk proyek ini.');
+        }
+
+        ProjectMaterialRequest::create([
+            'project_id'          => $project->id,
+            'project_material_id' => $pm->id,
+            'tanggal_pengajuan'   => $data['tanggal_pengajuan'],
+            'qty'                 => (float) $data['qty'],
+            'catatan'             => $data['catatan'] ?? null,
+            'status'              => 'pending',
+            'requested_by'        => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Pengajuan material berhasil dikirim (menunggu ACC Site Manager).');
+    }
+
+    // ==================================================
+    // ✅ APPROVE: otomatis jadi stok masuk (BEBAS > ESTIMASI)
+    // ==================================================
+    public function approveRequest(Request $request, Project $project, ProjectMaterialRequest $materialRequest)
+    {
+        if (auth()->user()->role !== 'site manager') {
+            abort(403);
+        }
+
+        if ($materialRequest->project_id !== $project->id) {
+            abort(404);
+        }
+
+        if ($materialRequest->status !== 'pending') {
+            return back()->with('error', 'Pengajuan ini sudah diproses.');
+        }
+
+        $data = $request->validate([
+            'approval_note' => 'nullable|string|max:255',
+        ]);
+
+        DB::transaction(function () use ($project, $materialRequest, $data) {
+
+            $pm = ProjectMaterial::where('id', $materialRequest->project_material_id)
+                ->where('project_id', $project->id)
+                ->first();
+
+            if (!$pm) {
+                throw new \Exception("Material tidak valid.");
+            }
+
+            $qtyInput = (float) $materialRequest->qty;
+
+            $stock = ProjectMaterialStock::create([
+                'project_id'          => $project->id,
+                'project_material_id' => $pm->id,
+                'tanggal'             => $materialRequest->tanggal_pengajuan,
+                'qty_masuk'           => $qtyInput,
+                'catatan'             => trim(($materialRequest->catatan ?? '') . ' | ACC: ' . (auth()->user()->name ?? 'Site Manager') . ' | ' . ($data['approval_note'] ?? '')) ?: null,
+                'created_by'          => auth()->id(),
+            ]);
+
+            $materialRequest->update([
+                'status'        => 'approved',
+                'approved_by'   => auth()->id(),
+                'approved_at'   => now(),
+                'approval_note' => $data['approval_note'] ?? null,
+                'stock_id'      => $stock->id,
+            ]);
+        });
+
+        return back()->with('success', 'Pengajuan di-ACC dan otomatis masuk ke Stok Masuk (boleh melebihi estimasi).');
+    }
+
+    public function rejectRequest(Request $request, Project $project, ProjectMaterialRequest $materialRequest)
+    {
+        if (auth()->user()->role !== 'site manager') {
+            abort(403);
+        }
+
+        if ($materialRequest->project_id !== $project->id) {
+            abort(404);
+        }
+
+        if ($materialRequest->status !== 'pending') {
+            return back()->with('error', 'Pengajuan ini sudah diproses.');
+        }
+
+        $data = $request->validate([
+            'approval_note' => 'required|string|max:255',
+        ]);
+
+        $materialRequest->update([
+            'status'        => 'rejected',
+            'approved_by'   => auth()->id(),
+            'approved_at'   => now(),
+            'approval_note' => $data['approval_note'],
+        ]);
+
+        return back()->with('success', 'Pengajuan ditolak.');
     }
 }

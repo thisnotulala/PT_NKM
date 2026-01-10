@@ -31,13 +31,8 @@
       <tbody>
         @forelse($projects as $p)
           @php
-            // kalau controller sudah map object (id,nama_proyek,client,tanggal,progress,status)
-            // ini aman untuk dua kondisi:
-            // 1) $p->client adalah string
-            // 2) $p->client adalah relasi object
             $clientName = is_string($p->client ?? null) ? $p->client : ($p->client->nama ?? '-');
-
-            $tanggal = $p->tanggal ?? ($p->tanggal_mulai.' s/d '.$p->tanggal_selesai);
+            $tanggal = $p->tanggal ?? (($p->tanggal_mulai ?? '-') . ' s/d ' . ($p->tanggal_selesai ?? '-'));
 
             $progress = $p->progress ?? 0;
             $status = $p->status ?? 'Aktif';
@@ -48,10 +43,15 @@
             if ($status === 'Terlambat') $badge = 'badge-danger';
             if ($status === 'Belum Mulai') $badge = 'badge-secondary';
 
-            // bar color
-            $barClass = 'bg-info';
-            if ($progress >= 100) $barClass = 'bg-success';
-            if ($status === 'Terlambat' && $progress < 100) $barClass = 'bg-danger';
+            // ✅ normalize progress biar aman 0..100 dan numeric
+            $progressNum = (float) $progress;
+            if ($progressNum < 0) $progressNum = 0;
+            if ($progressNum > 100) $progressNum = 100;
+
+            // ✅ warna bar (tanpa class bootstrap)
+            $barColor = '#17a2b8'; // info
+            if ($progressNum >= 100) $barColor = '#28a745'; // success
+            if ($status === 'Terlambat' && $progressNum < 100) $barColor = '#dc3545'; // danger
           @endphp
 
           <tr>
@@ -60,12 +60,21 @@
             <td>{{ $clientName }}</td>
             <td>{{ $tanggal }}</td>
 
+            {{-- ✅ Progress bar pasti tampil --}}
             <td>
-              <div class="progress" style="height: 18px;">
-                <div class="progress-bar {{ $barClass }}"
-                     role="progressbar"
-                     style="width: {{ $progress }}%">
-                  {{ $progress }}%
+              <div style="background:#e9ecef; border-radius:10px; height:18px; overflow:hidden;">
+                <div
+                  style="
+                    width: {{ $progressNum }}%;
+                    height: 18px;
+                    background: {{ $barColor }};
+                    line-height: 18px;
+                    color: #fff;
+                    font-size: 12px;
+                    text-align: center;
+                    min-width: {{ $progressNum > 0 ? '28px' : '0' }};
+                  ">
+                  {{ number_format($progressNum, 0) }}%
                 </div>
               </div>
             </td>

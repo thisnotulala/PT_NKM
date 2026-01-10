@@ -143,35 +143,34 @@ Route::middleware('auth')->group(function () {
     | - site manager & administrasi
     |--------------------------------------------------------------------------
     */
-    Route::middleware('role:site manager,administrasi')->group(function () {
-
-        // ✅ pilih proyek dulu
+    // ✅ pickProject boleh kepala lapangan
+    Route::middleware('role:site manager,administrasi,kepala lapangan')->group(function () {
         Route::get('/materials-proyek', [ProjectMaterialController::class, 'pickProject'])
             ->name('project.materials.pick');
 
-        // halaman daftar material untuk 1 proyek
+        // ✅ index materials juga boleh kepala lapangan
         Route::get('/project/{project}/materials', [ProjectMaterialController::class, 'index'])
             ->name('project.materials.index');
+    });
 
-        // tambah material ke proyek (estimasi)
+    // ✅ yang lain tetap hanya site manager & administrasi
+    Route::middleware('role:site manager,administrasi')->group(function () {
         Route::post('/project/{project}/materials', [ProjectMaterialController::class, 'store'])
             ->name('project.materials.store');
 
-        // update estimasi (qty_rencana, harga, dll)
         Route::put('/project/{project}/materials/{projectMaterial}', [ProjectMaterialController::class, 'update'])
             ->name('project.materials.update');
 
-        // hapus material dari proyek
         Route::delete('/project/{project}/materials/{projectMaterial}', [ProjectMaterialController::class, 'destroy'])
             ->name('project.materials.destroy');
 
-        // ✅ stok masuk
         Route::post('/project/{project}/materials/stock', [ProjectMaterialController::class, 'storeStock'])
             ->name('project.materials.stock.store');
 
         Route::delete('/project/{project}/materials/stock/{stock}', [ProjectMaterialController::class, 'destroyStock'])
             ->name('project.materials.stock.destroy');
     });
+
 
     // EQUIPMENT LOANS
 
@@ -311,6 +310,7 @@ Route::middleware('auth')->group(function () {
             ->name('project.expenses.update');
     });
 
+
     /*
     |--------------------------------------------------------------------------
     | PROFILE
@@ -318,4 +318,18 @@ Route::middleware('auth')->group(function () {
     */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // ✅ PENGAJUAN MATERIAL (kepala lapangan)
+    Route::middleware('role:kepala lapangan')->group(function () {
+        Route::post('/project/{project}/materials/request', [ProjectMaterialController::class, 'storeRequest'])
+            ->name('project.materials.request.store');
+    });
+
+    // ✅ APPROVE / REJECT pengajuan (site manager)
+    Route::middleware('role:site manager')->group(function () {
+        Route::post('/project/{project}/materials/request/{materialRequest}/approve', [ProjectMaterialController::class, 'approveRequest'])
+            ->name('project.materials.request.approve');
+
+        Route::post('/project/{project}/materials/request/{materialRequest}/reject', [ProjectMaterialController::class, 'rejectRequest'])
+            ->name('project.materials.request.reject');
+    });
 });

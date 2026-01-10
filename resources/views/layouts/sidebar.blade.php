@@ -98,7 +98,7 @@
                 </li>
 
                 <!-- MATERIAL PROYEK (SITE MANAGER & ADMINISTRASI) -->
-                @if(in_array($role, ['site manager','administrasi']))
+                @if(in_array($role, ['site manager','administrasi','kepala lapangan']))
                 <li class="nav-item">
                     <a href="{{ route('project.materials.pick') }}"
                     class="nav-link {{ request()->routeIs('project.materials.*') ? 'active' : '' }}">
@@ -107,6 +107,7 @@
                     </a>
                 </li>
                 @endif
+
 
                 <!-- PENGELUARAN PROYEK (❗SITE MANAGER & ADMINISTRASI SAJA) -->
                 @if(in_array($role, ['site manager','administrasi']))

@@ -164,16 +164,17 @@
 
       {{-- FOTO --}}
       <div class="form-group mt-4">
-        <label>Upload Foto (maks 5 foto)</label>
+        <label>Upload Foto (bisa lebih dari 1 foto)</label>
         <input type="file"
-               name="foto[]"
-               class="form-control"
-               multiple
-               accept="image/png,image/jpeg">
+              name="foto[]"
+              class="form-control"
+              multiple
+              accept="image/png,image/jpeg">
         <small class="text-muted">
-          Format: JPG / PNG. Maks 2MB per foto.
+          Kamu bisa pilih lebih dari 1 foto sekaligus.
         </small>
       </div>
+
 
       {{-- ACTION --}}
       <div class="mt-4">
