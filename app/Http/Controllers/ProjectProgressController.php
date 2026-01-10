@@ -94,179 +94,166 @@ class ProjectProgressController extends Controller
      * SIMPAN UPDATE
      * - hanya kepala lapangan
      */
-    public function store(Request $request, Project $project, ProjectPhase $phase)
-    {
-        if (auth()->user()->role !== 'kepala lapangan') {
-            abort(403);
-        }
+public function store(Request $request, Project $project, ProjectPhase $phase)
+{
+    if (auth()->user()->role !== 'kepala lapangan') abort(403);
+    if ($phase->project_id !== $project->id) abort(404);
 
-        if ($phase->project_id !== $project->id) {
-            abort(404);
-        }
-
-        if ((int) $phase->progress >= 100) {
-            return redirect()
-                ->route('project.progress.index', $project->id)
-                ->with('error', 'Tahapan ini sudah 100%, tidak bisa diupdate.');
-        }
-
-        $data = $request->validate([
-            'tanggal_update' => 'required|date',
-            'progress'       => 'required|integer|min:0|max:100',
-            'catatan'        => 'nullable|string',
-
-            // ✅ SDM yang bekerja (boleh kosong)
-            'sdm_ids'        => 'nullable|array',
-            'sdm_ids.*'      => 'exists:sdms,id',
-
-            // ✅ tambahan: pemakaian material (boleh kosong)
-            // format: materials[PROJECT_MATERIAL_ID] = qty_pakai
-            'materials'                          => 'nullable|array',
-            'materials.*.project_material_id'    => 'nullable|integer|exists:project_materials,id',
-            'materials.*.qty_pakai'              => 'nullable|numeric|min:0',
-
-            'foto'   => 'nullable|array',
-            'foto.*' => 'image|mimes:jpg,jpeg,png|max:2048',
-
-        ]);
-
-        if ((int) $data['progress'] < (int) $phase->progress) {
-            return back()->withErrors([
-                'progress' => "Progress tidak boleh turun dari {$phase->progress}%"
-            ]);
-        }
-        // ==============================
-        // VALIDASI STOK (REAL): masuk - pakai
-        // ==============================
-        $rows = $data['materials'] ?? [];
-
-        // agregasi total pemakaian per material
-        $needByPm = [];
-        foreach ($rows as $row) {
-            $pmId = $row['project_material_id'] ?? null;
-            $qty  = (float) ($row['qty_pakai'] ?? 0);
-
-            if (!$pmId || $qty <= 0) continue;
-
-            $needByPm[$pmId] = ($needByPm[$pmId] ?? 0) + $qty;
-        }
-
-        if (!empty($needByPm)) {
-            $pmIds = array_keys($needByPm);
-
-            // pastikan material milik project
-            $pms = ProjectMaterial::where('project_id', $project->id)
-                ->whereIn('id', $pmIds)
-                ->get()
-                ->keyBy('id');
-
-            // total masuk per material (dari project_material_stocks)
-            $masukByPm = ProjectMaterialStock::where('project_id', $project->id)
-                ->whereIn('project_material_id', $pmIds)
-                ->selectRaw('project_material_id, SUM(qty_masuk) as total_masuk')
-                ->groupBy('project_material_id')
-                ->pluck('total_masuk', 'project_material_id')
-                ->toArray();
-
-            // total pakai per material (dari project_material_usages)
-            $pakaiByPm = ProjectMaterialUsage::whereIn('project_material_id', $pmIds)
-                ->selectRaw('project_material_id, SUM(qty_pakai) as total_pakai')
-                ->groupBy('project_material_id')
-                ->pluck('total_pakai', 'project_material_id')
-                ->toArray();
-
-            foreach ($needByPm as $pmId => $needQty) {
-                if (!$pms->has($pmId)) {
-                    throw ValidationException::withMessages([
-                        'materials' => 'Material tidak valid untuk proyek ini.'
-                    ]);
-                }
-
-                $totalMasuk = (float) ($masukByPm[$pmId] ?? 0);
-                $totalPakai = (float) ($pakaiByPm[$pmId] ?? 0);
-                $tersedia   = $totalMasuk - $totalPakai;
-
-                if ($needQty > $tersedia + 0.00001) {
-                    $nama   = $pms[$pmId]->nama_material ?? "Material {$pmId}";
-                    $satuan = $pms[$pmId]->satuan ?? '';
-
-                    throw ValidationException::withMessages([
-                        'materials' => "Qty pakai '{$nama}' ({$needQty} {$satuan}) melebihi sisa stok ({$tersedia} {$satuan})."
-                    ]);
-                }
-            }
-        }
-
-        DB::transaction(function () use ($data, $project, $phase, $request) {
-
-            $log = ProjectPhaseProgressLog::create([
-                'project_id'       => $project->id,
-                'project_phase_id' => $phase->id,
-                'tanggal_update'   => $data['tanggal_update'],
-                'progress'         => (int)$data['progress'],
-                'catatan'          => $data['catatan'] ?? null,
-                'created_by'       => auth()->id(),
-            ]);
-
-            // ✅ simpan relasi SDM ke log (pivot)
-            $sdmIds = $data['sdm_ids'] ?? [];
-            $log->sdms()->sync($sdmIds);
-
-            // ✅ tambahan: simpan pemakaian material per log
-            // materials key = project_material_id, value = qty_pakai
-            $materialsRows = $data['materials'] ?? [];
-
-            $aggregated = [];
-
-            foreach ($materialsRows as $row) {
-                $pmId = $row['project_material_id'] ?? null;
-                $qty  = (float) ($row['qty_pakai'] ?? 0);
-
-                // skip kalau row belum lengkap atau qty 0
-                if (!$pmId || $qty <= 0) continue;
-
-                // pastikan material milik project ini
-                $pm = ProjectMaterial::where('id', $pmId)
-                    ->where('project_id', $project->id)
-                    ->first();
-
-                if (!$pm) continue;
-
-                ProjectMaterialUsage::create([
-                    'progress_log_id'     => $log->id,
-                    'project_material_id' => $pm->id,
-                    'qty_pakai'           => $qty,
-                ]);
-            }
-
-            // foto
-            if ($request->hasFile('foto')) {
-                foreach ($request->file('foto') as $file) {
-                    if (!$file) continue;
-
-                    $path = $file->store(
-                        "progress/project_{$project->id}/phase_{$phase->id}",
-                        'public'
-                    );
-
-                    ProjectPhaseProgressPhoto::create([
-                        'log_id'     => $log->id,
-                        'photo_path' => $path,
-                    ]);
-                }
-            }
-
-            // update phase
-            $phase->update([
-                'progress'         => (int)$data['progress'],
-                'last_progress_at' => $data['tanggal_update'],
-            ]);
-        });
-
+    // kalau sudah 100, stop
+    if ((int) $phase->progress >= 100) {
         return redirect()
             ->route('project.progress.index', $project->id)
-            ->with('success', 'Progress berhasil disimpan.');
+            ->with('error', 'Tahapan ini sudah 100%, tidak bisa diupdate.');
     }
+
+    $data = $request->validate([
+        'tanggal_update' => 'required|date',
+
+        // ⬇️ sekarang ini dianggap TAMBAHAN, bukan total
+        'progress'       => 'required|integer|min:1|max:100',
+
+        'catatan'        => 'nullable|string',
+        'sdm_ids'        => 'nullable|array',
+        'sdm_ids.*'      => 'exists:sdms,id',
+
+        'materials'                       => 'nullable|array',
+        'materials.*.project_material_id' => 'nullable|required_with:materials.*.qty_pakai|integer|exists:project_materials,id',
+        'materials.*.qty_pakai'           => 'nullable|required_with:materials.*.project_material_id|numeric|min:0',
+
+        // ✅ upload > 1 foto (tanpa max 5)
+        'foto'           => 'nullable|array',
+        'foto.*'         => 'image|mimes:jpg,jpeg,png|max:2048',
+    ]);
+
+    // ✅ hitung TOTAL BARU = sebelumnya + input
+    $prevProgress  = (int) $phase->progress;
+    $deltaProgress = (int) $data['progress'];
+    $newProgress   = $prevProgress + $deltaProgress;
+
+    // batasin max 100
+    if ($newProgress > 100) $newProgress = 100;
+
+    // =========================================================
+    // ✅ VALIDASI STOK: qty_pakai tidak boleh > stok tersedia
+    // (pakai kode validasi stok kamu yang sudah benar sebelumnya)
+    // =========================================================
+    $materialsRows = $data['materials'] ?? [];
+
+    $needByPm = [];
+    foreach ($materialsRows as $row) {
+        $pmId = $row['project_material_id'] ?? null;
+        $qty  = (float) ($row['qty_pakai'] ?? 0);
+        if (!$pmId || $qty <= 0) continue;
+        $needByPm[$pmId] = ($needByPm[$pmId] ?? 0) + $qty;
+    }
+
+    if (!empty($needByPm)) {
+        $pms = ProjectMaterial::where('project_id', $project->id)
+            ->whereIn('id', array_keys($needByPm))
+            ->get()
+            ->keyBy('id');
+
+        foreach ($needByPm as $pmId => $needQty) {
+            if (!$pms->has($pmId)) {
+                throw ValidationException::withMessages([
+                    'materials' => "Ada material yang tidak valid untuk proyek ini."
+                ]);
+            }
+        }
+
+        $masukByPm = ProjectMaterialStock::where('project_id', $project->id)
+            ->whereIn('project_material_id', array_keys($needByPm))
+            ->selectRaw('project_material_id, SUM(qty_masuk) as total_masuk')
+            ->groupBy('project_material_id')
+            ->pluck('total_masuk', 'project_material_id')
+            ->toArray();
+
+        $pakaiByPm = ProjectMaterialUsage::whereIn('project_material_id', array_keys($needByPm))
+            ->selectRaw('project_material_id, SUM(qty_pakai) as total_pakai')
+            ->groupBy('project_material_id')
+            ->pluck('total_pakai', 'project_material_id')
+            ->toArray();
+
+        foreach ($needByPm as $pmId => $needQty) {
+            $totalMasuk = (float) ($masukByPm[$pmId] ?? 0);
+            $totalPakai = (float) ($pakaiByPm[$pmId] ?? 0);
+            $tersedia   = $totalMasuk - $totalPakai;
+
+            if ($needQty > $tersedia + 0.00001) {
+                $nama = $pms[$pmId]->nama_material ?? "Material ID {$pmId}";
+                throw ValidationException::withMessages([
+                    'materials' => "Pemakaian '{$nama}' ({$needQty}) melebihi stok tersedia ({$tersedia})."
+                ]);
+            }
+        }
+    }
+
+    DB::transaction(function () use ($data, $project, $phase, $request, $deltaProgress, $newProgress) {
+
+        // ✅ LOG simpan DELTA (+25), bukan total
+        $log = ProjectPhaseProgressLog::create([
+            'project_id'       => $project->id,
+            'project_phase_id' => $phase->id,
+            'tanggal_update'   => $data['tanggal_update'],
+
+            // ⬇️ SIMPAN TAMBAHAN
+            'progress'         => $deltaProgress,
+
+            'catatan'          => $data['catatan'] ?? null,
+            'created_by'       => auth()->id(),
+        ]);
+
+        // SDM
+        $log->sdms()->sync($data['sdm_ids'] ?? []);
+
+        // Material usage
+        $materialsRows = $data['materials'] ?? [];
+        foreach ($materialsRows as $row) {
+            $pmId = $row['project_material_id'] ?? null;
+            $qty  = (float) ($row['qty_pakai'] ?? 0);
+            if (!$pmId || $qty <= 0) continue;
+
+            $pm = ProjectMaterial::where('id', $pmId)
+                ->where('project_id', $project->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$pm) continue;
+
+            ProjectMaterialUsage::create([
+                'progress_log_id'     => $log->id,
+                'project_material_id' => $pm->id,
+                'qty_pakai'           => $qty,
+            ]);
+        }
+
+        // Foto (bisa > 1)
+        if ($request->hasFile('foto')) {
+            foreach ($request->file('foto') as $file) {
+                $path = $file->store(
+                    "progress/project_{$project->id}/phase_{$phase->id}",
+                    'public'
+                );
+
+                ProjectPhaseProgressPhoto::create([
+                    'log_id'     => $log->id,
+                    'photo_path' => $path,
+                ]);
+            }
+        }
+
+        // ✅ UPDATE PHASE pakai TOTAL BARU
+        $phase->update([
+            'progress'         => $newProgress,
+            'last_progress_at' => $data['tanggal_update'],
+        ]);
+    });
+
+    return redirect()
+        ->route('project.progress.index', $project->id)
+        ->with('success', "Progress berhasil ditambahkan (+{$deltaProgress}%). Total sekarang {$newProgress}%.");
+}
+
 
     /**
      * PILIH PROYEK

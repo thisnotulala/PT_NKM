@@ -99,11 +99,24 @@
         </tr>
       </thead>
       <tbody>
+        @php
+          $running = []; // running total per phase_id
+        @endphp
         @forelse($logs as $l)
         <tr>
           <td>{{ $l->tanggal_update }}</td>
           <td>{{ $l->phase->nama_tahapan }}</td>
-          <td class="text-center">{{ $l->progress }}%</td>
+          @php
+            $pid = $l->project_phase_id;
+            $running[$pid] = ($running[$pid] ?? 0) + (int)$l->progress;
+            if ($running[$pid] > 100) $running[$pid] = 100;
+          @endphp
+
+          <td class="text-center">
+            +{{ $l->progress }}% <br>
+            <small class="text-muted">Total: {{ $running[$pid] }}%</small>
+          </td>
+
 
           {{-- ✅ SDM yang bekerja --}}
           <td>
