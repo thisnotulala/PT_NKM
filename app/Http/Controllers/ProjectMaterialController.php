@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\ProjectMaterial;
 use App\Models\ProjectMaterialStock;
 use App\Models\ProjectMaterialRequest;
+use App\Models\ProjectMaterialOut;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -33,10 +34,15 @@ class ProjectMaterialController extends Controller
         if (!in_array(auth()->user()->role, ['site manager', 'administrasi', 'kepala lapangan'])) {
             abort(403);
         }
-
+        $outs = ProjectMaterialOut::with('projectMaterial')
+            ->where('project_id', $project->id)
+            ->latest('tanggal')
+            ->latest()
+            ->get();
         $materials = ProjectMaterial::where('project_id', $project->id)
             ->withSum('stocks as qty_masuk_total', 'qty_masuk')
             ->withSum('usages as qty_pakai_total', 'qty_pakai')
+            ->withSum('outs as qty_keluar_total', 'qty_keluar')
             ->orderBy('nama_material')
             ->get();
 
@@ -51,7 +57,7 @@ class ProjectMaterialController extends Controller
             ->latest()
             ->get();
 
-        return view('project.materials.index', compact('project', 'materials', 'stocks', 'requests'));
+        return view('project.materials.index', compact('project', 'materials', 'stocks', 'requests','outs'));
     }
 
     /**
@@ -301,4 +307,67 @@ class ProjectMaterialController extends Controller
 
         return back()->with('success', 'Pengajuan ditolak.');
     }
+    
+
+    public function storeOut(Request $request, Project $project)
+    {
+        if (!in_array(auth()->user()->role, ['site manager', 'administrasi', 'kepala lapangan'])) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'project_material_id' => 'required|exists:project_materials,id',
+            'tanggal'             => 'required|date',
+            'qty_keluar'          => 'required|numeric|min:0.01',
+            'catatan'             => 'nullable|string|max:255',
+        ]);
+
+        $pm = ProjectMaterial::where('id', $data['project_material_id'])
+            ->where('project_id', $project->id)
+            ->first();
+
+        if (!$pm) {
+            return back()->with('error', 'Material tidak valid untuk proyek ini.');
+        }
+
+        $qtyKeluar = (float) $data['qty_keluar'];
+
+        // hitung sisa stok saat ini
+        $masuk = (float) $pm->stocks()->sum('qty_masuk');
+        $pakai = (float) $pm->usages()->sum('qty_pakai');       // dari progress log
+        $keluar = (float) $pm->outs()->sum('qty_keluar');       // transaksi keluar manual
+
+        $sisa = $masuk - ($pakai + $keluar);
+
+        if ($qtyKeluar > $sisa) {
+            return back()->with('error', 'Qty keluar melebihi sisa stok. Sisa saat ini: ' . number_format($sisa, 2));
+        }
+
+        ProjectMaterialOut::create([
+            'project_id'          => $project->id,
+            'project_material_id' => $pm->id,
+            'tanggal'             => $data['tanggal'],
+            'qty_keluar'          => $qtyKeluar,
+            'catatan'             => $data['catatan'] ?? null,
+            'created_by'          => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Stok keluar berhasil disimpan.');
+    }
+
+    public function destroyOut(Project $project, ProjectMaterialOut $out)
+    {
+        if (auth()->user()->role !== 'site manager') {
+            abort(403);
+        }
+
+        if ($out->project_id !== $project->id) {
+            abort(404);
+        }
+
+        $out->delete();
+
+        return back()->with('success', 'Riwayat stok keluar berhasil dihapus.');
+    }
+
 }

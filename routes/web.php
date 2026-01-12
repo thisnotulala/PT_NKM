@@ -19,6 +19,8 @@ use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\SdmController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProjectMaterialController;
+use App\Http\Controllers\ProjectMaterialUsageController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -156,8 +158,11 @@ Route::middleware('auth')->group(function () {
     // ✅ yang lain tetap hanya site manager & administrasi
     Route::middleware('role:site manager,administrasi')->group(function () {
         Route::post('/project/{project}/materials', [ProjectMaterialController::class, 'store'])
-            ->name('project.materials.store');
-
+            ->name('project.materials.store');  
+        Route::post('/project/{project}/materials/out', [ProjectMaterialController::class, 'storeOut'])
+        ->name('project.materials.out.store');
+        Route::delete('/project/{project}/materials/out/{out}', [ProjectMaterialController::class, 'destroyOut'])
+        ->name('project.materials.out.destroy');
         Route::put('/project/{project}/materials/{projectMaterial}', [ProjectMaterialController::class, 'update'])
             ->name('project.materials.update');
 

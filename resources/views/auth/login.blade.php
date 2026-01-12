@@ -83,20 +83,39 @@
         </div>
 
         <div class="login-body">
+
+            {{-- ✅ Pesan jika email/password salah --}}
+            @if ($errors->has('login_error'))
+                <div class="alert alert-danger text-center">
+                    {{ $errors->first('login_error') }}
+                </div>
+            @endif
+
             <form action="{{ url('/login') }}" method="POST">
                 @csrf
 
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" name="email" class="form-control" required autofocus>
+                    <input type="email" name="email" class="form-control"
+                           value="{{ old('email') }}" required autofocus>
+
+                    {{-- (Opsional) error validasi email --}}
+                    @error('email')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
                 </div>
 
                 <div class="form-group mt-3">
                     <label>Password</label>
                     <input type="password" name="password" class="form-control" required>
+
+                    {{-- (Opsional) error validasi password --}}
+                    @error('password')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
                 </div>
 
-                <button class="btn btn-login btn-block mt-4">
+                <button class="btn btn-login btn-block mt-4" type="submit">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </button>
             </form>

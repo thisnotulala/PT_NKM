@@ -28,4 +28,11 @@ class ProjectMaterial extends Model
     {
         return $this->hasMany(ProjectMaterialStock::class, 'project_material_id');
     }
+    // App\Models\ProjectMaterial.php
+
+    public function outs()
+    {
+        return $this->hasMany(\App\Models\ProjectMaterialOut::class, 'project_material_id');
+    }
+
 }

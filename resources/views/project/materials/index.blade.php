@@ -65,8 +65,9 @@
 
       {{-- =============================
            TABEL EVALUASI ESTIMASI VS REALISASI
+           ✅ Update: Terpakai = stok keluar (auto dari progress)
          ============================= --}}
-      <h6 class="mb-2">Evaluasi Material (Estimasi vs Pakai)</h6>
+      <h6 class="mb-2">Evaluasi Material (Estimasi vs Keluar)</h6>
       <table class="table table-bordered">
         <thead>
           <tr>
@@ -75,7 +76,7 @@
             <th width="120">Satuan</th>
             <th width="140">Estimasi</th>
             <th width="140">Stok Masuk</th>
-            <th width="140">Terpakai</th>
+            <th width="140">Keluar (Auto)</th>
             <th width="140">Sisa Stok</th>
             <th width="120">Status Pakai</th>
             <th width="140">Status Stok</th>
@@ -89,22 +90,26 @@
           @php
             $estimasi = (float) ($m->qty_estimasi ?? 0);
             $masuk    = (float) ($m->qty_masuk_total ?? 0);
-            $pakai    = (float) ($m->qty_pakai_total ?? 0);
-            $tol      = (float) ($m->toleransi_persen ?? 0);
 
-            $sisaStok     = $masuk - $pakai;
+            // ✅ kalau kamu sudah pakai outs sebagai stok keluar otomatis
+            $keluar   = (float) ($m->qty_keluar_total ?? 0);
+
+            // ✅ sisa stok = masuk - keluar
+            $sisaStok = $masuk - $keluar;
+
+            $tol      = (float) ($m->toleransi_persen ?? 0);
 
             $batasAman = $estimasi * 0.8;
             $batasOver = $estimasi * (1 + ($tol / 100));
 
-            // status pakai
+            // status pakai (pakai = keluar)
             if ($estimasi <= 0) {
               $statusPakai = 'Aman'; $badgePakai = 'success';
-            } elseif ($pakai > $batasOver) {
+            } elseif ($keluar > $batasOver) {
               $statusPakai = 'Over'; $badgePakai = 'danger';
-            } elseif ($pakai >= $estimasi) {
+            } elseif ($keluar >= $estimasi) {
               $statusPakai = 'Habis'; $badgePakai = 'warning';
-            } elseif ($pakai >= $batasAman) {
+            } elseif ($keluar >= $batasAman) {
               $statusPakai = 'Hampir Habis'; $badgePakai = 'warning';
             } else {
               $statusPakai = 'Aman'; $badgePakai = 'success';
@@ -129,7 +134,7 @@
 
             <td class="text-right">{{ number_format($estimasi, 2) }}</td>
             <td class="text-right">{{ number_format($masuk, 2) }}</td>
-            <td class="text-right">{{ number_format($pakai, 2) }}</td>
+            <td class="text-right">{{ number_format($keluar, 2) }}</td>
 
             <td class="text-right">{{ number_format($sisaStok, 2) }}</td>
 
@@ -208,7 +213,7 @@
         </div>
       </form>
 
-      {{-- ✅ RIWAYAT STOK MASUK - tepat di bawah tombol simpan --}}
+      {{-- ✅ RIWAYAT STOK MASUK --}}
       <h6 class="mb-2">Riwayat Stok Masuk</h6>
       <table class="table table-bordered">
         <thead>
@@ -249,11 +254,73 @@
         </tbody>
       </table>
 
+      <hr>
+
+      {{-- =========================================================
+         ✅ STOK KELUAR (AUTO DARI PROGRESS)
+         - Tidak ada form manual
+         - hanya tampil riwayat
+       ========================================================= --}}
+      <h6 class="mb-2">Riwayat Stok Keluar (Auto dari Progress)</h6>
+      <small class="text-muted d-block mb-2">
+        Stok keluar otomatis tercatat saat Kepala Lapangan menginput progress dan material.
+      </small>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th width="150">Tanggal</th>
+            <th>Material</th>
+            <th width="160">Qty Keluar</th>
+            <th>Catatan</th>
+            @if($isSiteManager)
+              <th width="120">Aksi</th>
+            @endif
+          </tr>
+        </thead>
+        <tbody>
+          @forelse($outs as $o)
+            <tr>
+              <td>{{ $o->tanggal }}</td>
+              <td>{{ $o->projectMaterial->nama_material ?? '-' }}</td>
+              <td class="text-right">
+                {{ number_format((float)$o->qty_keluar, 2) }}
+                {{ $o->projectMaterial->satuan ?? '' }}
+              </td>
+              <td>
+                {{ $o->catatan ?? '-' }}
+                @if(!empty($o->progress_log_id))
+                  <span class="text-muted">| Log #{{ $o->progress_log_id }}</span>
+                @endif
+              </td>
+
+              @if($isSiteManager)
+                <td class="text-center">
+                  <form method="POST" action="{{ route('project.materials.out.destroy', [$project->id, $o->id]) }}">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-sm btn-danger" onclick="return confirm('Hapus riwayat stok keluar ini?')">
+                      Hapus
+                    </button>
+                  </form>
+                </td>
+              @endif
+            </tr>
+          @empty
+            <tr>
+              <td colspan="{{ $isSiteManager ? 5 : 4 }}" class="text-center text-muted">
+                Belum ada stok keluar (dari progress).
+              </td>
+            </tr>
+          @endforelse
+        </tbody>
+      </table>
+
     @endif {{-- end canManageMaterial --}}
+
 
     {{-- =========================================================
         SECTION KEPALA LAPANGAN: RIWAYAT (READ ONLY)
-        (kalau bukan SM/Admin)
        ========================================================= --}}
     @if($isKepalaLap && !$canManageMaterial)
       <h6 class="mb-2">Riwayat Stok Masuk</h6>
@@ -284,12 +351,45 @@
       </table>
 
       <hr>
+
+      <h6 class="mb-2">Riwayat Stok Keluar (Auto dari Progress)</h6>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th width="150">Tanggal</th>
+            <th>Material</th>
+            <th width="160">Qty Keluar</th>
+            <th>Catatan</th>
+          </tr>
+        </thead>
+        <tbody>
+          @forelse($outs as $o)
+            <tr>
+              <td>{{ $o->tanggal }}</td>
+              <td>{{ $o->projectMaterial->nama_material ?? '-' }}</td>
+              <td class="text-right">
+                {{ number_format((float)$o->qty_keluar, 2) }}
+                {{ $o->projectMaterial->satuan ?? '' }}
+              </td>
+              <td>
+                {{ $o->catatan ?? '-' }}
+                @if(!empty($o->progress_log_id))
+                  <span class="text-muted">| Log #{{ $o->progress_log_id }}</span>
+                @endif
+              </td>
+            </tr>
+          @empty
+            <tr><td colspan="4" class="text-center text-muted">Belum ada stok keluar</td></tr>
+          @endforelse
+        </tbody>
+      </table>
+
+      <hr>
     @endif
 
+
     {{-- =========================================================
-        SECTION PENGAJUAN
-        - kepala lapangan: bisa input pengajuan
-        - site manager: bisa approve/reject
+        SECTION PENGAJUAN (punyamu tetap)
        ========================================================= --}}
     <h6 class="mb-2">Pengajuan Material (Kepala Lapangan)</h6>
 
@@ -361,7 +461,6 @@
               {{ $r->projectMaterial->satuan ?? '' }}
             </td>
             <td class="text-center">
-
               @if($r->status === 'pending')
                 <span class="badge badge-warning">Pending</span>
               @elseif($r->status === 'approved')
