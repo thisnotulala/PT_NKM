@@ -11,6 +11,7 @@ class ProjectMaterial extends Model
         'nama_material',
         'satuan',
         'qty_estimasi',
+        'harga',        
         'toleransi_persen',
     ];
 

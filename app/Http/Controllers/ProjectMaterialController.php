@@ -7,6 +7,7 @@ use App\Models\ProjectMaterial;
 use App\Models\ProjectMaterialStock;
 use App\Models\ProjectMaterialRequest;
 use App\Models\ProjectMaterialOut;
+use App\Models\Satuan; // ✅ master satuan
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -34,13 +35,16 @@ class ProjectMaterialController extends Controller
         if (!in_array(auth()->user()->role, ['site manager', 'administrasi', 'kepala lapangan'])) {
             abort(403);
         }
+
         $outs = ProjectMaterialOut::with('projectMaterial')
             ->where('project_id', $project->id)
             ->latest('tanggal')
             ->latest()
             ->get();
+
         $materials = ProjectMaterial::where('project_id', $project->id)
             ->withSum('stocks as qty_masuk_total', 'qty_masuk')
+            // usages masih boleh disimpan untuk log, tapi evaluasi kamu pakai outs
             ->withSum('usages as qty_pakai_total', 'qty_pakai')
             ->withSum('outs as qty_keluar_total', 'qty_keluar')
             ->orderBy('nama_material')
@@ -57,7 +61,17 @@ class ProjectMaterialController extends Controller
             ->latest()
             ->get();
 
-        return view('project.materials.index', compact('project', 'materials', 'stocks', 'requests','outs'));
+        // ✅ master satuan buat dropdown
+        $satuans = Satuan::orderBy('nama_satuan')->get();
+
+        return view('project.materials.index', compact(
+            'project',
+            'materials',
+            'stocks',
+            'requests',
+            'outs',
+            'satuans'
+        ));
     }
 
     /**
@@ -70,18 +84,23 @@ class ProjectMaterialController extends Controller
         }
 
         $data = $request->validate([
-            'nama_material'      => 'required|string|max:255',
-            'satuan'             => 'nullable|string|max:50',
-            'qty_estimasi'       => 'required|numeric|min:0',
-            'toleransi_persen'   => 'nullable|integer|min:0|max:100',
+            'nama_material'    => 'required|string|max:255',
+
+            // ✅ satuan harus dari master satuans (tanpa migration, tetap simpan sebagai string)
+            'satuan'           => 'nullable|string|max:50|exists:satuans,nama_satuan',
+
+            'qty_estimasi'     => 'required|numeric|min:0',
+            'harga'            => 'required|numeric|min:0',
+            'toleransi_persen' => 'nullable|integer|min:0|max:100',
         ]);
 
         ProjectMaterial::create([
-            'project_id'        => $project->id,
-            'nama_material'     => $data['nama_material'],
-            'satuan'            => $data['satuan'] ?? null,
-            'qty_estimasi'      => $data['qty_estimasi'],
-            'toleransi_persen'  => $data['toleransi_persen'] ?? null,
+            'project_id'       => $project->id,
+            'nama_material'    => $data['nama_material'],
+            'satuan'           => $data['satuan'] ?? null,
+            'qty_estimasi'     => $data['qty_estimasi'],
+            'harga'            => $data['harga'],  
+            'toleransi_persen' => $data['toleransi_persen'] ?? null,
         ]);
 
         return back()->with('success', 'Material estimasi berhasil ditambahkan.');
@@ -101,17 +120,21 @@ class ProjectMaterialController extends Controller
         }
 
         $data = $request->validate([
-            'nama_material'      => 'required|string|max:255',
-            'satuan'             => 'nullable|string|max:50',
-            'qty_estimasi'       => 'required|numeric|min:0',
-            'toleransi_persen'   => 'nullable|integer|min:0|max:100',
+            'nama_material'    => 'required|string|max:255',
+
+            // ✅ satuan harus dari master satuans
+            'satuan'           => 'nullable|string|max:50|exists:satuans,nama_satuan',
+            'harga'            => 'required|numeric|min:0', 
+            'qty_estimasi'     => 'required|numeric|min:0',
+            'toleransi_persen' => 'nullable|integer|min:0|max:100',
         ]);
 
         $projectMaterial->update([
-            'nama_material'     => $data['nama_material'],
-            'satuan'            => $data['satuan'] ?? null,
-            'qty_estimasi'      => $data['qty_estimasi'],
-            'toleransi_persen'  => $data['toleransi_persen'] ?? null,
+            'nama_material'    => $data['nama_material'],
+            'satuan'           => $data['satuan'] ?? null,
+            'harga'            => $data['harga'], 
+            'qty_estimasi'     => $data['qty_estimasi'],
+            'toleransi_persen' => $data['toleransi_persen'] ?? null,
         ]);
 
         return back()->with('success', 'Material estimasi berhasil diperbarui.');
@@ -307,8 +330,10 @@ class ProjectMaterialController extends Controller
 
         return back()->with('success', 'Pengajuan ditolak.');
     }
-    
 
+    // ==================================================
+    // (OPSIONAL) kalau masih dipakai: stok keluar manual
+    // ==================================================
     public function storeOut(Request $request, Project $project)
     {
         if (!in_array(auth()->user()->role, ['site manager', 'administrasi', 'kepala lapangan'])) {
@@ -332,14 +357,12 @@ class ProjectMaterialController extends Controller
 
         $qtyKeluar = (float) $data['qty_keluar'];
 
-        // hitung sisa stok saat ini
-        $masuk = (float) $pm->stocks()->sum('qty_masuk');
-        $pakai = (float) $pm->usages()->sum('qty_pakai');       // dari progress log
-        $keluar = (float) $pm->outs()->sum('qty_keluar');       // transaksi keluar manual
+        // ✅ sisa stok = masuk - keluar (outs)
+        $masuk  = (float) $pm->stocks()->sum('qty_masuk');
+        $keluar = (float) $pm->outs()->sum('qty_keluar');
+        $sisa   = $masuk - $keluar;
 
-        $sisa = $masuk - ($pakai + $keluar);
-
-        if ($qtyKeluar > $sisa) {
+        if ($qtyKeluar > $sisa + 0.00001) {
             return back()->with('error', 'Qty keluar melebihi sisa stok. Sisa saat ini: ' . number_format($sisa, 2));
         }
 
@@ -369,5 +392,4 @@ class ProjectMaterialController extends Controller
 
         return back()->with('success', 'Riwayat stok keluar berhasil dihapus.');
     }
-
 }

@@ -109,16 +109,6 @@
                 @endif
 
 
-                <!-- PENGELUARAN PROYEK (❗SITE MANAGER & ADMINISTRASI SAJA) -->
-                @if(in_array($role, ['site manager','administrasi']))
-                <li class="nav-item">
-                    <a href="{{ route('project.expenses.pick') }}"
-                       class="nav-link {{ request()->routeIs('project.expenses.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-money-bill-wave"></i>
-                        <p>Pengeluaran Proyek</p>
-                    </a>
-                </li>
-                @endif
 
                 <!-- JADWAL TAHAPAN (SEMUA ROLE) -->
                 <li class="nav-item">

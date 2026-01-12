@@ -39,24 +39,40 @@
     @if($canManageMaterial)
 
       {{-- =============================
-           FORM TAMBAH ESTIMASI
+           FORM TAMBAH ESTIMASI (+ HARGA)
          ============================= --}}
       <h6 class="mb-2">Tambah Material Estimasi</h6>
       <form method="POST" action="{{ route('project.materials.store',$project->id) }}" class="mb-4">
         @csrf
         <div class="row">
-          <div class="col-md-5">
+          <div class="col-md-4">
             <label>Nama Material</label>
-            <input type="text" name="nama_material" class="form-control" required>
+            <input type="text" name="nama_material" class="form-control" required value="{{ old('nama_material') }}">
           </div>
+
           <div class="col-md-2">
             <label>Satuan</label>
-            <input type="text" name="satuan" class="form-control" placeholder="zak, pcs, m3">
+            <select name="satuan" class="form-control">
+              <option value="">-- pilih satuan --</option>
+              @foreach(($satuans ?? []) as $s)
+                <option value="{{ $s->nama_satuan }}" {{ old('satuan') == $s->nama_satuan ? 'selected' : '' }}>
+                  {{ $s->nama_satuan }}
+                </option>
+              @endforeach
+            </select>
           </div>
-          <div class="col-md-3">
+
+          <div class="col-md-2">
             <label>Qty Estimasi</label>
-            <input type="number" step="0.01" name="qty_estimasi" class="form-control" required value="0">
+            <input type="number" step="0.01" name="qty_estimasi" class="form-control" required value="{{ old('qty_estimasi', 0) }}">
           </div>
+
+          <div class="col-md-2">
+            <label>Harga Material</label>
+            <input type="number" step="0.01" name="harga" class="form-control" required value="{{ old('harga', 0) }}" placeholder="contoh: 15000">
+            <small class="text-muted">Per 1 satuan</small>
+          </div>
+
           <div class="col-md-2 d-flex align-items-end">
             <button class="btn btn-maroon btn-block">Tambah</button>
           </div>
@@ -65,7 +81,8 @@
 
       {{-- =============================
            TABEL EVALUASI ESTIMASI VS REALISASI
-           ✅ Update: Terpakai = stok keluar (auto dari progress)
+           ✅ Update: Keluar = outs
+           ✅ Tambah kolom Harga di samping Material
          ============================= --}}
       <h6 class="mb-2">Evaluasi Material (Estimasi vs Keluar)</h6>
       <table class="table table-bordered">
@@ -73,6 +90,7 @@
           <tr>
             <th width="50">No</th>
             <th>Material</th>
+            <th width="140">Harga</th>
             <th width="120">Satuan</th>
             <th width="140">Estimasi</th>
             <th width="140">Stok Masuk</th>
@@ -90,19 +108,15 @@
           @php
             $estimasi = (float) ($m->qty_estimasi ?? 0);
             $masuk    = (float) ($m->qty_masuk_total ?? 0);
-
-            // ✅ kalau kamu sudah pakai outs sebagai stok keluar otomatis
             $keluar   = (float) ($m->qty_keluar_total ?? 0);
-
-            // ✅ sisa stok = masuk - keluar
             $sisaStok = $masuk - $keluar;
 
-            $tol      = (float) ($m->toleransi_persen ?? 0);
+            $harga = (float) ($m->harga ?? 0);
 
+            $tol = (float) ($m->toleransi_persen ?? 0);
             $batasAman = $estimasi * 0.8;
             $batasOver = $estimasi * (1 + ($tol / 100));
 
-            // status pakai (pakai = keluar)
             if ($estimasi <= 0) {
               $statusPakai = 'Aman'; $badgePakai = 'success';
             } elseif ($keluar > $batasOver) {
@@ -115,7 +129,6 @@
               $statusPakai = 'Aman'; $badgePakai = 'success';
             }
 
-            // status stok masuk
             if ($estimasi <= 0) {
               $statusStok = 'Aman'; $badgeStok = 'success';
             } else {
@@ -130,6 +143,7 @@
           <tr>
             <td>{{ $loop->iteration }}</td>
             <td>{{ $m->nama_material }}</td>
+            <td class="text-right">Rp {{ number_format($harga, 2, ',', '.') }}</td>
             <td class="text-center">{{ $m->satuan ?? '-' }}</td>
 
             <td class="text-right">{{ number_format($estimasi, 2) }}</td>
@@ -159,7 +173,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="{{ $isSiteManager ? 10 : 9 }}" class="text-center text-muted">
+            <td colspan="{{ $isSiteManager ? 11 : 10 }}" class="text-center text-muted">
               Belum ada material estimasi
             </td>
           </tr>
@@ -181,7 +195,7 @@
             <select name="project_material_id" class="form-control" required>
               <option value="">-- pilih material --</option>
               @foreach($materials as $m)
-                <option value="{{ $m->id }}">
+                <option value="{{ $m->id }}" {{ old('project_material_id') == $m->id ? 'selected' : '' }}>
                   {{ $m->nama_material }} {{ $m->satuan ? '(' . $m->satuan . ')' : '' }}
                 </option>
               @endforeach
@@ -190,17 +204,17 @@
 
           <div class="col-md-2">
             <label>Tanggal</label>
-            <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
+            <input type="date" name="tanggal" class="form-control" value="{{ old('tanggal', date('Y-m-d')) }}" required>
           </div>
 
           <div class="col-md-2">
             <label>Qty Masuk</label>
-            <input type="number" step="0.01" name="qty_masuk" class="form-control" required>
+            <input type="number" step="0.01" name="qty_masuk" class="form-control" required value="{{ old('qty_masuk') }}">
           </div>
 
           <div class="col-md-3">
             <label>Catatan</label>
-            <input type="text" name="catatan" class="form-control" placeholder="opsional">
+            <input type="text" name="catatan" class="form-control" placeholder="opsional" value="{{ old('catatan') }}">
           </div>
         </div>
 
@@ -258,8 +272,6 @@
 
       {{-- =========================================================
          ✅ STOK KELUAR (AUTO DARI PROGRESS)
-         - Tidak ada form manual
-         - hanya tampil riwayat
        ========================================================= --}}
       <h6 class="mb-2">Riwayat Stok Keluar (Auto dari Progress)</h6>
       <small class="text-muted d-block mb-2">
@@ -316,8 +328,57 @@
         </tbody>
       </table>
 
-    @endif {{-- end canManageMaterial --}}
+      {{-- =========================================================
+         ✅ TABEL PENGELUARAN MATERIAL (BARU)
+         no, nama material, stok masuk, harga, total
+         total = stok_masuk_total * harga
+       ========================================================= --}}
+      <hr>
+      <h6 class="mb-2">Pengeluaran Material</h6>
 
+      @php $grandTotal = 0; @endphp
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th width="60">No</th>
+            <th>Nama Material</th>
+            <th width="170">Stok Masuk</th>
+            <th width="170">Harga</th>
+            <th width="200">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @forelse($materials as $m)
+            @php
+              $masuk = (float) ($m->qty_masuk_total ?? 0);
+              $harga = (float) ($m->harga ?? 0);
+              $total = $masuk * $harga;
+              $grandTotal += $total;
+            @endphp
+            <tr>
+              <td>{{ $loop->iteration }}</td>
+              <td>{{ $m->nama_material }}</td>
+              <td class="text-right">
+                {{ number_format($masuk, 2) }} {{ $m->satuan ?? '' }}
+              </td>
+              <td class="text-right">Rp {{ number_format($harga, 2, ',', '.') }}</td>
+              <td class="text-right">Rp {{ number_format($total, 2, ',', '.') }}</td>
+            </tr>
+          @empty
+            <tr>
+              <td colspan="5" class="text-center text-muted">Belum ada data material.</td>
+            </tr>
+          @endforelse
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="4" class="text-right">Grand Total</th>
+            <th class="text-right">Rp {{ number_format($grandTotal, 2, ',', '.') }}</th>
+          </tr>
+        </tfoot>
+      </table>
+
+    @endif {{-- end canManageMaterial --}}
 
     {{-- =========================================================
         SECTION KEPALA LAPANGAN: RIWAYAT (READ ONLY)
@@ -387,9 +448,8 @@
       <hr>
     @endif
 
-
     {{-- =========================================================
-        SECTION PENGAJUAN (punyamu tetap)
+        SECTION PENGAJUAN
        ========================================================= --}}
     <h6 class="mb-2">Pengajuan Material (Kepala Lapangan)</h6>
 
@@ -402,7 +462,7 @@
             <select name="project_material_id" class="form-control" required>
               <option value="">-- pilih material --</option>
               @foreach($materials as $m)
-                <option value="{{ $m->id }}">
+                <option value="{{ $m->id }}" {{ old('project_material_id') == $m->id ? 'selected' : '' }}>
                   {{ $m->nama_material }} {{ $m->satuan ? '(' . $m->satuan . ')' : '' }}
                 </option>
               @endforeach
@@ -411,17 +471,17 @@
 
           <div class="col-md-2">
             <label>Tanggal Pengajuan</label>
-            <input type="date" name="tanggal_pengajuan" class="form-control" value="{{ date('Y-m-d') }}" required>
+            <input type="date" name="tanggal_pengajuan" class="form-control" value="{{ old('tanggal_pengajuan', date('Y-m-d')) }}" required>
           </div>
 
           <div class="col-md-2">
             <label>Qty</label>
-            <input type="number" step="0.01" name="qty" class="form-control" required>
+            <input type="number" step="0.01" name="qty" class="form-control" required value="{{ old('qty') }}">
           </div>
 
           <div class="col-md-3">
             <label>Catatan</label>
-            <input type="text" name="catatan" class="form-control" placeholder="opsional">
+            <input type="text" name="catatan" class="form-control" placeholder="opsional" value="{{ old('catatan') }}">
           </div>
         </div>
 
