@@ -162,8 +162,6 @@
     <tr>
       <td class="label">Progress Total</td>
       <td>{{ number_format($progressTotal, 1) }}%</td>
-      <td class="label">Total Pengeluaran</td>
-      <td>Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</td>
     </tr>
     <tr>
       <td class="label">RAB</td>
@@ -210,30 +208,34 @@
     </tbody>
   </table>
 
-  {{-- B. SDM --}}
-  <div class="section">B. Tim SDM</div>
+  {{-- B. SDM (dari update progress) --}}
+  <div class="section">B. Tim SDM (Berpartisipasi di Progress)</div>
   <table class="tbl">
     <thead>
       <tr>
         <th width="50">No</th>
         <th>Nama</th>
-        <th width="160">Peran (Master)</th>
-        <th width="180">Peran di Proyek</th>
+        <th width="200">Peran (Master)</th>
       </tr>
     </thead>
     <tbody>
-      @forelse($project->projectSdms as $as)
-      <tr>
-        <td class="text-center">{{ $loop->iteration }}</td>
-        <td>{{ $as->sdm->nama ?? '-' }}</td>
-        <td>{{ $as->sdm->peran ?? '-' }}</td>
-        <td>{{ $as->peran_di_proyek ?? '-' }}</td>
-      </tr>
+      @forelse($sdmFromLogs as $s)
+        <tr>
+          <td class="text-center">{{ $loop->iteration }}</td>
+          <td>{{ $s->nama ?? '-' }}</td>
+          <td>{{ $s->peran ?? '-' }}</td>
+        </tr>
       @empty
-      <tr><td colspan="4" class="text-center muted">Belum ada SDM</td></tr>
+        <tr>
+          <td colspan="3" class="text-center muted">
+            Belum ada SDM yang tercatat di progress
+          </td>
+        </tr>
       @endforelse
     </tbody>
   </table>
+
+
 
   {{-- C. LOG PROGRESS --}}
   <div class="section">C. Riwayat Progress</div>
@@ -261,6 +263,59 @@
       @endforelse
     </tbody>
   </table>
+
+  {{-- D. MATERIAL PROYEK --}}
+  <div class="section">D. Material Proyek</div>
+
+  @php $grandTotalMaterial = 0; @endphp
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th width="40">No</th>
+        <th>Material</th>
+        <th width="80">Satuan</th>
+        <th width="90">Estimasi</th>
+        <th width="90">Stok Masuk</th>
+        <th width="100">Harga</th>
+        <th width="120">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      @forelse($materials as $m)
+        @php
+          $estimasi = (float) ($m->qty_estimasi ?? 0);
+          $masuk    = (float) ($m->qty_masuk_total ?? 0);
+          $harga    = (float) ($m->harga ?? 0);
+          $total    = $masuk * $harga;
+          $grandTotalMaterial += $total;
+        @endphp
+        <tr>
+          <td class="text-center">{{ $loop->iteration }}</td>
+          <td>{{ $m->nama_material }}</td>
+          <td class="text-center">{{ $m->satuan ?? '-' }}</td>
+          <td class="text-right">{{ number_format($estimasi, 2) }}</td>
+          <td class="text-right">{{ number_format($masuk, 2) }}</td>
+          <td class="text-right">Rp {{ number_format($harga, 0, ',', '.') }}</td>
+          <td class="text-right">Rp {{ number_format($total, 0, ',', '.') }}</td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="7" class="text-center muted">Belum ada data material</td>
+        </tr>
+      @endforelse
+    </tbody>
+
+    <tfoot>
+      <tr>
+        <th colspan="6" class="text-right">Total Nilai Material</th>
+        <th class="text-right">
+          Rp {{ number_format($grandTotalMaterial, 0, ',', '.') }}
+        </th>
+      </tr>
+    </tfoot>
+  </table>
+
 
   <div class="footer">
     PT. Nusantara Klik Makmur — Laporan Proyek: {{ $project->nama_proyek }}

@@ -1,10 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\Project;
-use App\Models\ProjectExpense;
 use App\Models\ProjectPhaseProgressLog;
+use App\Models\ProjectMaterial;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -24,13 +23,8 @@ class ProjectReportController extends Controller
     public function projectPdf(Project $project)
     {
         // load relasi yang kamu butuhkan
-        $project->load([
-            'client',
-            'phases' => function ($q) {
-                $q->orderBy('urutan');
-            },
-            'projectSdms.sdm',
-        ]);
+        $project->load(['client','phases'=>fn($q)=>$q->orderBy('urutan'),'projectSdms.sdm']);
+
 
         // =========================
         // PROGRESS TOTAL (bobot * progress)
@@ -39,19 +33,27 @@ class ProjectReportController extends Controller
             return ($p->persen * ($p->progress ?? 0)) / 100;
         });
 
+        $materials = ProjectMaterial::where('project_id', $project->id)
+            ->withSum('stocks as qty_masuk_total', 'qty_masuk')
+            ->orderBy('nama_material')
+            ->get();
+
+
         // =========================
         // LOG PROGRESS + FOTO
         // =========================
-        $logs = ProjectPhaseProgressLog::with(['phase', 'photos'])
+        $logs = ProjectPhaseProgressLog::with(['phase', 'photos','sdms'])
             ->where('project_id', $project->id)
             ->latest('tanggal_update')
             ->latest()
             ->get();
 
-        // =========================
-        // TOTAL PENGELUARAN
-        // =========================
-        $totalPengeluaran = ProjectExpense::where('project_id', $project->id)->sum('nominal');
+        $sdmFromLogs = $logs->flatMap(function ($l) {
+                return $l->sdms; // koleksi SDM per log
+            })
+            ->unique('id')
+            ->values();
+        
 
         // =========================
         // STATUS PROYEK (simple)
@@ -78,11 +80,13 @@ class ProjectReportController extends Controller
             'project',
             'progressTotal',
             'logs',
-            'totalPengeluaran',
+            'materials',
             'status',
-            'logoBase64'
-        ))->setPaper('A4', 'portrait');
+            'logoBase64',
+            'sdmFromLogs',
+        ))->setPaper('A4', 'landscape');
 
         return $pdf->download('Laporan-Proyek-' . $project->nama_proyek . '.pdf');
     }
+    
 }

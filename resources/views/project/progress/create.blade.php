@@ -122,8 +122,7 @@
             <tr>
               <td>
                 <select name="materials[0][project_material_id]"
-                        class="form-control material-select"
-                        required>
+                        class="form-control material-select">
                   <option value="">-- pilih material --</option>
                   @foreach($projectMaterials as $pm)
                     <option value="{{ $pm->id }}">
