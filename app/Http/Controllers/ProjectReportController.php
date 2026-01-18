@@ -6,6 +6,8 @@ use App\Models\ProjectPhaseProgressLog;
 use App\Models\ProjectMaterial;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use App\Models\ProjectPhaseSchedule;
+
 
 class ProjectReportController extends Controller
 {
@@ -37,6 +39,96 @@ class ProjectReportController extends Controller
             ->withSum('stocks as qty_masuk_total', 'qty_masuk')
             ->orderBy('nama_material')
             ->get();
+
+        // =========================
+        // JADWAL vs PROGRESS REAL
+        // =========================
+        $today = date('Y-m-d'); // patokan evaluasi (tanggal cetak)
+
+        // ambil jadwal per tahapan (key by project_phase_id)
+        $schedules = ProjectPhaseSchedule::where('project_id', $project->id)
+            ->get()
+            ->keyBy('project_phase_id');
+
+        // hitung planned per tahapan + planned total berbobot
+        $plannedByPhase = [];
+        $plannedTotal = 0;
+
+        foreach ($project->phases as $ph) {
+            $sch = $schedules->get($ph->id);
+
+            $planned = null; // kalau tidak ada jadwal
+            $jadwalText = '-';
+
+            if ($sch) {
+                $start = $sch->tanggal_mulai;
+                $end   = $sch->tanggal_selesai;
+                $jadwalText = $start . ' s/d ' . $end;
+
+                // planned% berdasarkan timeline jadwal
+                if ($today < $start) {
+                    $planned = 0;
+                } elseif ($today > $end) {
+                    $planned = 100;
+                } else {
+                    // hari berjalan inklusif
+                    $totalHari = (int) (date_diff(date_create($start), date_create($end))->days + 1);
+                    $jalanHari = (int) (date_diff(date_create($start), date_create($today))->days + 1);
+
+                    if ($totalHari < 1) $totalHari = 1;
+                    if ($jalanHari < 0) $jalanHari = 0;
+                    if ($jalanHari > $totalHari) $jalanHari = $totalHari;
+
+                    $planned = round(($jalanHari / $totalHari) * 100, 1);
+                }
+
+                // planned total berbobot
+                $plannedTotal += ((float)$ph->persen * (float)$planned) / 100;
+            }
+
+            $real = (float) ($ph->progress ?? 0);
+
+            $diff = null;
+            if (!is_null($planned)) {
+                $diff = round($real - $planned, 1); // (+) lebih cepat, (-) terlambat
+            }
+
+            $plannedByPhase[] = [
+                'nama_tahapan' => $ph->nama_tahapan,
+                'bobot' => (float) $ph->persen,
+                'jadwal' => $jadwalText,
+                'planned' => $planned,
+                'real' => round($real, 1),
+                'diff' => $diff,
+            ];
+        }
+
+        // status ringkas jadwal vs real (threshold bisa kamu atur)
+        $plannedTotal = round($plannedTotal, 1);
+        $progressTotalReal = round((float)$progressTotal, 1);
+
+        $selisihTotal = null;
+        $evaluasiJadwal = 'Belum ada jadwal';
+        $badgeJadwal = 'badge-warning';
+
+        if ($schedules->count() > 0) {
+            $selisihTotal = round($progressTotalReal - $plannedTotal, 1);
+
+            // ambang "sesuai" misal +/- 5%
+            $threshold = 5;
+
+            if (abs($selisihTotal) <= $threshold) {
+                $evaluasiJadwal = 'Sesuai';
+                $badgeJadwal = 'badge-success';
+            } elseif ($selisihTotal < -$threshold) {
+                $evaluasiJadwal = 'Terlambat';
+                $badgeJadwal = 'badge-danger';
+            } else {
+                $evaluasiJadwal = 'Lebih cepat';
+                $badgeJadwal = 'badge-info';
+            }
+        }
+
 
 
         // =========================
@@ -84,6 +176,13 @@ class ProjectReportController extends Controller
             'status',
             'logoBase64',
             'sdmFromLogs',
+
+            'plannedByPhase',
+            'plannedTotal',
+            'progressTotalReal',
+            'selisihTotal',
+            'evaluasiJadwal',
+            'badgeJadwal'
         ))->setPaper('A4', 'landscape');
 
         return $pdf->download('Laporan-Proyek-' . $project->nama_proyek . '.pdf');

@@ -316,6 +316,82 @@
     </tfoot>
   </table>
 
+  {{-- E. EVALUASI JADWAL vs PROGRESS REAL --}}
+  <div class="section">E. Evaluasi Jadwal vs Progress Real</div>
+
+  <table class="grid">
+    <tr>
+      <td class="label">Progress Rencana (s/d hari ini)</td>
+      <td>{{ number_format($plannedTotal ?? 0, 1) }}%</td>
+      <td class="label">Progress Real</td>
+      <td>{{ number_format($progressTotalReal ?? 0, 1) }}%</td>
+    </tr>
+    <tr>
+      <td class="label">Selisih (Real - Rencana)</td>
+      <td>
+        @if(!is_null($selisihTotal))
+          {{ number_format($selisihTotal, 1) }}%
+        @else
+          <span class="muted">-</span>
+        @endif
+      </td>
+      <td class="label">Status</td>
+      <td>
+        <span class="badge {{ $badgeJadwal ?? 'badge-warning' }}">
+          {{ $evaluasiJadwal ?? 'Belum ada jadwal' }}
+        </span>
+      </td>
+    </tr>
+  </table>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th width="40">No</th>
+        <th>Tahapan</th>
+        <th width="80">Bobot</th>
+        <th width="150">Jadwal</th>
+        <th width="80">Rencana</th>
+        <th width="80">Real</th>
+        <th width="80">Selisih</th>
+        <th width="110">Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      @forelse($plannedByPhase as $row)
+        @php
+          $ket = '-';
+          if (is_null($row['planned'])) {
+            $ket = 'Belum dijadwalkan';
+          } else {
+            if ($row['diff'] >= 5) $ket = 'Lebih cepat';
+            elseif ($row['diff'] <= -5) $ket = 'Terlambat';
+            else $ket = 'Sesuai';
+          }
+        @endphp
+        <tr>
+          <td class="text-center">{{ $loop->iteration }}</td>
+          <td>{{ $row['nama_tahapan'] }}</td>
+          <td class="text-center">{{ number_format($row['bobot'], 0) }}%</td>
+          <td class="text-center">{{ $row['jadwal'] }}</td>
+          <td class="text-center">
+            @if(is_null($row['planned'])) <span class="muted">-</span>
+            @else {{ number_format($row['planned'], 1) }}% @endif
+          </td>
+          <td class="text-center">{{ number_format($row['real'], 1) }}%</td>
+          <td class="text-center">
+            @if(is_null($row['diff'])) <span class="muted">-</span>
+            @else {{ number_format($row['diff'], 1) }}% @endif
+          </td>
+          <td class="text-center">{{ $ket }}</td>
+        </tr>
+      @empty
+        <tr><td colspan="8" class="text-center muted">Tidak ada data evaluasi jadwal</td></tr>
+      @endforelse
+    </tbody>
+  </table>
+
+
 
   <div class="footer">
     PT. Nusantara Klik Makmur — Laporan Proyek: {{ $project->nama_proyek }}

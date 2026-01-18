@@ -5,20 +5,27 @@
 <div class="card">
   <div class="card-header"><h5>Edit Equipment</h5></div>
   <div class="card-body">
-    <form action="{{ route('equipment.update', $equipment->id) }}" method="POST">
+    <form action="{{ route('equipment.update', $equipment->id) }}" method="POST" autocomplete="off">
       @csrf
       @method('PUT')
 
       <div class="form-group mt-3">
         <label>Nama Alat</label>
-        <input type="text" name="nama_alat" class="form-control" required
-               value="{{ old('nama_alat', $equipment->nama_alat) }}">
-        @error('nama_alat') <small class="text-danger">{{ $message }}</small> @enderror
+        <input type="text"
+               name="nama_alat"
+               class="form-control @error('nama_alat') is-invalid @enderror"
+               value="{{ old('nama_alat', $equipment->nama_alat) }}"
+               autocomplete="off">
+        @error('nama_alat')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
 
       <div class="form-group mt-3">
         <label>Satuan</label>
-        <select name="satuan_id" class="form-control" required>
+        <select name="satuan_id"
+                class="form-control @error('satuan_id') is-invalid @enderror">
+          <option value="">-- pilih satuan --</option>
           @foreach($satuans as $s)
             <option value="{{ $s->id }}"
               {{ old('satuan_id', $equipment->satuan_id) == $s->id ? 'selected' : '' }}>
@@ -26,21 +33,34 @@
             </option>
           @endforeach
         </select>
-        @error('satuan_id') <small class="text-danger">{{ $message }}</small> @enderror
+        @error('satuan_id')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
 
       <div class="form-group mt-3">
         <label>Stok</label>
-        <input type="number" name="stok" class="form-control" min="0" required
-               value="{{ old('stok', $equipment->stok) }}">
-        @error('stok') <small class="text-danger">{{ $message }}</small> @enderror
+        <input type="number"
+               name="stok"
+               class="form-control @error('stok') is-invalid @enderror"
+               min="0"
+               value="{{ old('stok', $equipment->stok) }}"
+               autocomplete="off">
+        @error('stok')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
 
       <div class="form-group mt-3">
         <label>Kondisi</label>
-        <input type="text" name="kondisi" class="form-control" required
-               value="{{ old('kondisi', $equipment->kondisi) }}">
-        @error('kondisi') <small class="text-danger">{{ $message }}</small> @enderror
+        <input type="text"
+               name="kondisi"
+               class="form-control @error('kondisi') is-invalid @enderror"
+               value="{{ old('kondisi', $equipment->kondisi) }}"
+               autocomplete="off">
+        @error('kondisi')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
 
       <div class="mt-4">

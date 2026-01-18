@@ -5,12 +5,22 @@
 <div class="card">
   <div class="card-header"><h5>Edit Proyek</h5></div>
 
+  @if($errors->any())
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        @foreach($errors->all() as $err)
+          <li>{{ $err }}</li>
+        @endforeach
+      </ul>
+    </div>
+  @endif
+  
   <div class="card-body">
     @if($errors->has('tahapan_total'))
       <div class="alert alert-danger">{{ $errors->first('tahapan_total') }}</div>
     @endif
 
-    <form action="{{ route('project.update',$project->id) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('project.update',$project->id) }}" method="POST" enctype="multipart/form-data" novalidate>
       @csrf
       @method('PUT')
 
@@ -69,6 +79,7 @@
 
 
       <hr>
+      <div id="tahapanAlert" class="alert alert-danger d-none"></div>
       <div class="d-flex align-items-center justify-content-between">
         <h6 class="mb-0">Tahapan Proyek (Total harus 100%)</h6>
         <span class="badge badge-info" id="totalBadge">Total: 0%</span>
@@ -156,8 +167,15 @@ function removeRow(btn) {
 
 function confirmSubmit() {
   const total = calcTotal();
+  const alertBox = document.getElementById('tahapanAlert');
+
+  if (alertBox) alertBox.classList.add('d-none');
+
   if (total !== 100) {
-    alert('Total persentase tahapan harus 100%. Sekarang: ' + total + '%');
+    if (alertBox) {
+      alertBox.classList.remove('d-none');
+      alertBox.innerText = 'Total persentase tahapan harus 100%. Sekarang: ' + total + '%';
+    }
     return false;
   }
   return true;

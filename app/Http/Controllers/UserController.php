@@ -23,8 +23,25 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
+            'password_confirmation' => 'required',
+        ], [
+            // name
+            'name.required' => 'Nama wajib diisi.',
+            'name.string'   => 'Nama harus berupa teks.',
+            'name.max'      => 'Nama maksimal 100 karakter.',
+
+            // email
+            'email.required' => 'Email wajib diisi.',
+            'email.email'    => 'Format email tidak valid.',
+            'email.unique'   => 'Email sudah terdaftar, silakan gunakan email lain.',
+
+            // password
+            'password.required'  => 'Password wajib diisi.',
+            'password.min'       => 'Password minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sama dengan password.',
+            'password_confirmation.required' => 'Konfirmasi password wajib diisi.',
         ]);
 
         User::create([
@@ -48,6 +65,22 @@ class UserController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6|confirmed',
+            'password_confirmation' => 'required_with:password',
+        ], [
+            // name
+            'name.required' => 'Nama wajib diisi.',
+            'name.string'   => 'Nama harus berupa teks.',
+            'name.max'      => 'Nama maksimal 100 karakter.',
+
+            // email
+            'email.required' => 'Email wajib diisi.',
+            'email.email'    => 'Format email tidak valid.',
+            'email.unique'   => 'Email sudah terdaftar, silakan gunakan email lain.',
+
+            // password (opsional)
+            'password.min'       => 'Password minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sama dengan password.',
+            'password_confirmation.required_with' => 'Konfirmasi password wajib diisi jika mengubah password.',
         ]);
 
         $data = $request->only('name', 'email');

@@ -14,7 +14,7 @@ class SatuanController extends Controller
 
     public function index()
     {
-        $satuans = Satuan::latest()->get();
+        $satuans = Satuan::orderByDesc('created_at')->get();
         return view('satuan.index', compact('satuans'));
     }
 
@@ -27,11 +27,17 @@ class SatuanController extends Controller
     {
         $data = $request->validate([
             'nama_satuan' => 'required|string|max:50|unique:satuans,nama_satuan',
+        ], [
+            'nama_satuan.required' => 'Nama satuan wajib diisi.',
+            'nama_satuan.string'   => 'Nama satuan harus berupa teks.',
+            'nama_satuan.max'      => 'Nama satuan maksimal 50 karakter.',
+            'nama_satuan.unique'   => 'Nama satuan sudah ada, silakan gunakan nama yang lain.',
         ]);
 
         Satuan::create($data);
 
-        return redirect()->route('satuan.index')->with('success', 'Satuan berhasil ditambahkan.');
+        return redirect()->route('satuan.index')
+            ->with('success', 'Satuan berhasil ditambahkan.');
     }
 
     public function edit(Satuan $satuan)
@@ -43,10 +49,16 @@ class SatuanController extends Controller
     {
         $data = $request->validate([
             'nama_satuan' => 'required|string|max:50|unique:satuans,nama_satuan,' . $satuan->id,
+        ], [
+            'nama_satuan.required' => 'Nama satuan wajib diisi.',
+            'nama_satuan.string'   => 'Nama satuan harus berupa teks.',
+            'nama_satuan.max'      => 'Nama satuan maksimal 50 karakter.',
+            'nama_satuan.unique'   => 'Nama satuan sudah ada, silakan gunakan nama yang lain.',
         ]);
 
         $satuan->update($data);
 
-        return redirect()->route('satuan.index')->with('success', 'Satuan berhasil diupdate.');
+        return redirect()->route('satuan.index')
+            ->with('success', 'Satuan berhasil diperbarui.');
     }
 }

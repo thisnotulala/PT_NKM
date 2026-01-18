@@ -5,13 +5,22 @@
 <div class="card">
   <div class="card-header"><h5>Tambah Satuan</h5></div>
   <div class="card-body">
-    <form action="{{ route('satuan.store') }}" method="POST">
+
+    {{-- ERROR VALIDASI --}}
+    <form action="{{ route('satuan.store') }}" method="POST" autocomplete="off">
       @csrf
 
       <div class="form-group">
         <label>Nama Satuan</label>
-        <input type="text" name="nama_satuan" class="form-control" required value="{{ old('nama_satuan') }}">
-        @error('nama_satuan') <small class="text-danger">{{ $message }}</small> @enderror
+        <input type="text"
+               name="nama_satuan"
+               class="form-control @error('nama_satuan') is-invalid @enderror"
+               value="{{ old('nama_satuan') }}"
+               placeholder="Contoh: Kg, Liter, m2">
+
+        @error('nama_satuan')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
 
       <div class="mt-4">

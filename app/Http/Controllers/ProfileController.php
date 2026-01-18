@@ -19,10 +19,50 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'current_password' => 'nullable|required_with:password',
-            'password' => 'nullable|min:6|confirmed',
+            'nama_proyek'     => 'required|string|max:255',
+            'client_id'       => 'required|exists:clients,id',
+            'tanggal_mulai'   => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+
+            'dokumen'         => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg|max:5120',
+            'rab'             => 'nullable|file|mimes:pdf,xls,xlsx|max:5120',
+
+            'tahapan'                => 'required|array|min:1',
+            'tahapan.*.nama_tahapan' => 'required|string|max:255',
+            'tahapan.*.persen'       => 'required|integer|min:0|max:100',
+        ], [
+            'nama_proyek.required' => 'Nama proyek wajib diisi.',
+            'nama_proyek.max'      => 'Nama proyek maksimal 255 karakter.',
+
+            'client_id.required' => 'Client wajib dipilih.',
+            'client_id.exists'   => 'Client yang dipilih tidak ditemukan.',
+
+            'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
+            'tanggal_mulai.date'     => 'Format tanggal mulai tidak valid.',
+
+            'tanggal_selesai.required'      => 'Tanggal selesai wajib diisi.',
+            'tanggal_selesai.date'          => 'Format tanggal selesai tidak valid.',
+            'tanggal_selesai.after_or_equal'=> 'Tanggal selesai harus sama atau setelah tanggal mulai.',
+
+            'dokumen.file'  => 'Dokumen harus berupa file.',
+            'dokumen.mimes' => 'Dokumen harus berformat: pdf/doc/docx/xls/xlsx/png/jpg/jpeg.',
+            'dokumen.max'   => 'Ukuran dokumen maksimal 5MB.',
+
+            'rab.file'  => 'RAB harus berupa file.',
+            'rab.mimes' => 'RAB harus berformat: PDF atau Excel (xls/xlsx).',
+            'rab.max'   => 'Ukuran RAB maksimal 5MB.',
+
+            'tahapan.required' => 'Minimal harus ada 1 tahapan.',
+            'tahapan.array'    => 'Format tahapan tidak valid.',
+            'tahapan.min'      => 'Minimal harus ada 1 tahapan.',
+
+            'tahapan.*.nama_tahapan.required' => 'Nama tahapan wajib diisi.',
+            'tahapan.*.nama_tahapan.max'      => 'Nama tahapan maksimal 255 karakter.',
+
+            'tahapan.*.persen.required' => 'Persentase tahapan wajib diisi.',
+            'tahapan.*.persen.integer'  => 'Persentase tahapan harus berupa angka bulat.',
+            'tahapan.*.persen.min'      => 'Persentase tahapan minimal 0.',
+            'tahapan.*.persen.max'      => 'Persentase tahapan maksimal 100.',
         ]);
 
         // update nama & email

@@ -17,43 +17,42 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
-        <table class="table table-bordered table-hover">
-            <thead>
-                <tr>
-                    <th width="50">No</th>
-                    <th>Nama</th>
-                    <th>Peran</th>
-                    <th>No. Telepon</th>
-                    <th>Alamat</th>
-                    <th width="140">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($sdms as $sdm)
-                <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>{{ $sdm->nama }}</td>
-                    <td>{{ $sdm->peran }}</td>
-                    <td>{{ $sdm->nomor_telepon }}</td>
-                    <td>{{ $sdm->alamat }}</td>
-                    <td>
-                        <div class="action-group">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th width="50">No</th>
+                        <th>Nama</th>
+                        <th>Peran</th>
+                        <th width="170">No. Telepon</th>
+                        <th>Alamat</th>
+                        <th width="80" class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($sdms as $sdm)
+                    <tr>
+                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $sdm->nama }}</td>
+                        <td>{{ $sdm->peran }}</td>
+                        <td>{{ $sdm->nomor_telepon ?? '-' }}</td>
+                        <td>{{ $sdm->alamat ?? '-' }}</td>
+                        <td class="text-center">
                             <a href="{{ route('sdm.edit', $sdm->id) }}"
                                class="btn-action btn-edit"
                                title="Edit SDM">
                                 <i class="fas fa-pen"></i>
                             </a>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" class="text-center">Data SDM kosong</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Data SDM kosong</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 @endsection

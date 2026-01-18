@@ -50,6 +50,10 @@
             height: 45px;
         }
 
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
         .btn-login {
             background: #8B1E1E;
             color: #fff;
@@ -84,34 +88,46 @@
 
         <div class="login-body">
 
-            {{-- ✅ Pesan jika email/password salah --}}
+            {{-- ALERT ERROR LOGIN (email / password salah) --}}
             @if ($errors->has('login_error'))
                 <div class="alert alert-danger text-center">
+                    <i class="fas fa-exclamation-circle"></i>
                     {{ $errors->first('login_error') }}
                 </div>
             @endif
 
-            <form action="{{ url('/login') }}" method="POST">
+            <form action="{{ url('/login') }}" method="POST" novalidate>
                 @csrf
 
+                {{-- EMAIL --}}
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" name="email" class="form-control"
-                           value="{{ old('email') }}" required autofocus>
+                    <input type="text"
+                           name="email"
+                           class="form-control @error('email') is-invalid @enderror"
+                           value="{{ old('email') }}"
+                           placeholder="contoh@email.com"
+                           autofocus>
 
-                    {{-- (Opsional) error validasi email --}}
                     @error('email')
-                        <small class="text-danger">{{ $message }}</small>
+                        <small class="text-danger">
+                            <i class="fas fa-times-circle"></i> {{ $message }}
+                        </small>
                     @enderror
                 </div>
 
+                {{-- PASSWORD --}}
                 <div class="form-group mt-3">
                     <label>Password</label>
-                    <input type="password" name="password" class="form-control" required>
+                    <input type="password"
+                           name="password"
+                           class="form-control @error('password') is-invalid @enderror"
+                           placeholder="••••••••">
 
-                    {{-- (Opsional) error validasi password --}}
                     @error('password')
-                        <small class="text-danger">{{ $message }}</small>
+                        <small class="text-danger">
+                            <i class="fas fa-times-circle"></i> {{ $message }}
+                        </small>
                     @enderror
                 </div>
 
