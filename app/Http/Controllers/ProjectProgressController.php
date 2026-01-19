@@ -109,7 +109,7 @@ class ProjectProgressController extends Controller
         $data = $request->validate([
             'tanggal_update' => 'required|date',
 
-            // ⬇️ input ini dianggap TAMBAHAN, bukan total
+            // input ini dianggap TAMBAHAN, bukan total
             'progress'       => 'required|integer|min:1|max:100',
 
             'catatan'        => 'nullable|string',
@@ -120,17 +120,29 @@ class ProjectProgressController extends Controller
             'materials.*.project_material_id' => 'nullable|required_with:materials.*.qty_pakai|integer|exists:project_materials,id',
             'materials.*.qty_pakai'           => 'nullable|required_with:materials.*.project_material_id|numeric|min:0',
 
-            // ✅ upload > 1 foto
+            // upload > 1 foto
             'foto'           => 'nullable|array',
             'foto.*'         => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // ✅ hitung TOTAL BARU = sebelumnya + input
+        // ================================
+        // ✅ VALIDASI DELTA MAX = SISA 100
+        // ================================
         $prevProgress  = (int) $phase->progress;
         $deltaProgress = (int) $data['progress'];
-        $newProgress   = $prevProgress + $deltaProgress;
 
-        // batasin max 100
+        $remaining = 100 - $prevProgress;
+        if ($remaining < 0) $remaining = 0;
+
+        // kalau input melebihi sisa, tolak (ini yang kamu butuh)
+        if ($deltaProgress > $remaining) {
+            throw ValidationException::withMessages([
+                'progress' => "Progress yang bisa ditambahkan maksimal {$remaining}%. Progress saat ini {$prevProgress}%.",
+            ]);
+        }
+
+        // total baru = sebelumnya + input (sudah aman karena <= remaining)
+        $newProgress = $prevProgress + $deltaProgress;
         if ($newProgress > 100) $newProgress = 100;
 
         // =========================================================
@@ -199,7 +211,7 @@ class ProjectProgressController extends Controller
                 'project_phase_id' => $phase->id,
                 'tanggal_update'   => $data['tanggal_update'],
 
-                // ⬇️ SIMPAN TAMBAHAN
+                // SIMPAN TAMBAHAN
                 'progress'         => $deltaProgress,
 
                 'catatan'          => $data['catatan'] ?? null,
@@ -223,14 +235,14 @@ class ProjectProgressController extends Controller
 
                 if (!$pm) continue;
 
-                // ✅ tetap simpan detail pemakaian per log (buat tampilan log)
+                // simpan detail pemakaian per log (buat tampilan log)
                 ProjectMaterialUsage::create([
                     'progress_log_id'     => $log->id,
                     'project_material_id' => $pm->id,
                     'qty_pakai'           => $qty,
                 ]);
 
-                // ✅ INI yang bikin muncul di halaman Project Material -> Riwayat Stok Keluar (Auto dari Progress)
+                // stok keluar auto dari progress
                 ProjectMaterialOut::create([
                     'project_id'          => $project->id,
                     'project_material_id' => $pm->id,
@@ -268,6 +280,7 @@ class ProjectProgressController extends Controller
             ->route('project.progress.index', $project->id)
             ->with('success', "Progress berhasil ditambahkan (+{$deltaProgress}%). Total sekarang {$newProgress}%.");
     }
+
 
     /**
      * PILIH PROYEK

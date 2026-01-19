@@ -245,7 +245,6 @@
         <th width="200">Tahapan</th>
         <th width="80">Progress</th>
         <th>Catatan</th>
-        <th width="80">Foto</th>
       </tr>
     </thead>
     <tbody>
@@ -255,7 +254,6 @@
         <td>{{ $l->phase->nama_tahapan ?? '-' }}</td>
         <td class="text-center">{{ $l->progress }}%</td>
         <td>{{ $l->catatan ?? '-' }}</td>
-        <td class="text-center">{{ $l->photos->count() }}</td>
       </tr>
       @empty
       <tr><td colspan="5" class="text-center muted">Belum ada progress</td></tr>

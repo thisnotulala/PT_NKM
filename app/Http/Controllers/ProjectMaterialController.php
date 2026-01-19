@@ -79,60 +79,73 @@ class ProjectMaterialController extends Controller
      */
     public function store(Request $request, Project $project)
     {
-        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) {
-            abort(403);
-        }
+        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) abort(403);
 
-        $data = $request->validate([
-            'nama_material'    => 'required|string|max:255',
-
-            // ✅ satuan harus dari master satuans (tanpa migration, tetap simpan sebagai string)
-            'satuan'           => 'nullable|string|max:50|exists:satuans,nama_satuan',
-
-            'qty_estimasi'     => 'required|numeric|min:0',
-            'harga'            => 'required|numeric|min:0',
-            'toleransi_persen' => 'nullable|integer|min:0|max:100',
-        ]);
+        $data = $request->validate(
+            [
+                'nama_material'    => 'required|string|max:255',
+                'satuan'           => 'required|string|max:50|exists:satuans,nama_satuan',
+                'qty_estimasi'     => 'required|numeric|min:1',
+                'harga'            => 'required|numeric|min:1',
+                'toleransi_persen' => 'nullable|integer|min:0|max:100',
+            ],
+            [
+                'nama_material.required' => 'Nama material wajib diisi.',
+                'satuan.required'        => 'Satuan wajib dipilih.',
+                'satuan.exists'          => 'Satuan tidak valid.',
+                'qty_estimasi.required'  => 'Qty estimasi wajib diisi.',
+                'qty_estimasi.numeric'   => 'Qty estimasi harus berupa angka.',
+                'qty_estimasi.min'       => 'Qty estimasi tidak boleh kurang dari 1.',
+                'harga.required'         => 'Harga material wajib diisi.',
+                'harga.numeric'          => 'Harga material harus berupa angka.',
+                'harga.min'              => 'Harga material tidak boleh kurang dari 1.',
+            ]
+        );
 
         ProjectMaterial::create([
             'project_id'       => $project->id,
             'nama_material'    => $data['nama_material'],
-            'satuan'           => $data['satuan'] ?? null,
+            'satuan'           => $data['satuan'],
             'qty_estimasi'     => $data['qty_estimasi'],
-            'harga'            => $data['harga'],  
+            'harga'            => $data['harga'],
             'toleransi_persen' => $data['toleransi_persen'] ?? null,
         ]);
 
         return back()->with('success', 'Material estimasi berhasil ditambahkan.');
     }
-
     /**
      * UPDATE ESTIMASI MATERIAL
      */
     public function update(Request $request, Project $project, ProjectMaterial $projectMaterial)
     {
-        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) {
-            abort(403);
-        }
+        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) abort(403);
+        if ($projectMaterial->project_id !== $project->id) abort(404);
 
-        if ($projectMaterial->project_id !== $project->id) {
-            abort(404);
-        }
-
-        $data = $request->validate([
-            'nama_material'    => 'required|string|max:255',
-
-            // ✅ satuan harus dari master satuans
-            'satuan'           => 'nullable|string|max:50|exists:satuans,nama_satuan',
-            'harga'            => 'required|numeric|min:0', 
-            'qty_estimasi'     => 'required|numeric|min:0',
-            'toleransi_persen' => 'nullable|integer|min:0|max:100',
-        ]);
+        $data = $request->validate(
+            [
+                'nama_material'    => 'required|string|max:255',
+                'satuan'           => 'required|string|max:50|exists:satuans,nama_satuan',
+                'harga'            => 'required|numeric|min:1',
+                'qty_estimasi'     => 'required|numeric|min:1',
+                'toleransi_persen' => 'nullable|integer|min:0|max:100',
+            ],
+            [
+                'nama_material.required' => 'Nama material wajib diisi.',
+                'satuan.required'        => 'Satuan wajib dipilih.',
+                'satuan.exists'          => 'Satuan tidak valid.',
+                'qty_estimasi.required'  => 'Qty estimasi wajib diisi.',
+                'qty_estimasi.numeric'   => 'Qty estimasi harus berupa angka.',
+                'qty_estimasi.min'       => 'Qty estimasi tidak boleh kurang dari 1.',
+                'harga.required'         => 'Harga material wajib diisi.',
+                'harga.numeric'          => 'Harga material harus berupa angka.',
+                'harga.min'              => 'Harga material tidak boleh kurang dari 1.',
+            ]
+        );
 
         $projectMaterial->update([
             'nama_material'    => $data['nama_material'],
-            'satuan'           => $data['satuan'] ?? null,
-            'harga'            => $data['harga'], 
+            'satuan'           => $data['satuan'],
+            'harga'            => $data['harga'],
             'qty_estimasi'     => $data['qty_estimasi'],
             'toleransi_persen' => $data['toleransi_persen'] ?? null,
         ]);
@@ -163,16 +176,25 @@ class ProjectMaterialController extends Controller
     // ==================================================
     public function storeStock(Request $request, Project $project)
     {
-        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) {
-            abort(403);
-        }
+        if (!in_array(auth()->user()->role, ['site manager', 'administrasi'])) abort(403);
 
-        $data = $request->validate([
-            'project_material_id' => 'required|exists:project_materials,id',
-            'tanggal'             => 'required|date',
-            'qty_masuk'           => 'required|numeric|min:0.01',
-            'catatan'             => 'nullable|string|max:255',
-        ]);
+        $data = $request->validate(
+            [
+                'project_material_id' => 'required|exists:project_materials,id',
+                'tanggal'             => 'required|date',
+                'qty_masuk'           => 'required|numeric|min:1',
+                'catatan'             => 'nullable|string|max:255',
+            ],
+            [
+                'project_material_id.required' => 'Material wajib dipilih.',
+                'project_material_id.exists'   => 'Material tidak valid.',
+                'tanggal.required'             => 'Tanggal wajib diisi.',
+                'tanggal.date'                 => 'Format tanggal tidak valid.',
+                'qty_masuk.required'           => 'Qty masuk wajib diisi.',
+                'qty_masuk.numeric'            => 'Qty masuk harus berupa angka.',
+                'qty_masuk.min'                => 'Qty masuk tidak boleh kurang dari 1.',
+            ]
+        );
 
         // pastikan material milik project ini
         $pm = ProjectMaterial::where('id', $data['project_material_id'])

@@ -23,10 +23,13 @@
 
       <div class="form-group">
         <label>Mode Generate</label>
-        <select name="mode" class="form-control" >
-          <option value="replace" {{ old('mode')=='replace'?'selected':'' }}>Replace (hapus jadwal lama, buat ulang)</option>
-          <option value="skip" {{ old('mode')=='skip'?'selected':'' }}>Skip (yang sudah ada tidak diubah)</option>
-        </select>
+          <select name="mode" class="form-control" required>
+            <option value="">-- pilih mode --</option>
+            <option value="replace" {{ old('mode')=='replace'?'selected':'' }}>Replace (hapus jadwal lama, buat ulang)</option>
+            <option value="skip" {{ old('mode')=='skip'?'selected':'' }}>Skip (yang sudah ada tidak diubah)</option>
+          </select>
+          @error('mode') <small class="text-danger">{{ $message }}</small> @enderror
+
       </div>
 
       <hr>
@@ -52,7 +55,6 @@
                 class="form-control durasi-input"
                 name="durasi[{{ $p['id'] }}]"
                 min="1"
-                required
                 value="{{ old('durasi.'.$p['id'], $p['durasi_default']) }}"
               >
 

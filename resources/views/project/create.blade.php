@@ -1,168 +1,228 @@
 @extends('layouts.app')
-@section('title','Tambah Proyek')
+
+@section('title','Update Progress Tahapan')
 
 @section('content')
 <div class="card">
-  <div class="card-header"><h5>Tambah Proyek</h5></div>
-
-  @if($errors->any())
-    <div class="alert alert-danger">
-      <ul class="mb-0">
-        @foreach($errors->all() as $err)
-          <li>{{ $err }}</li>
-        @endforeach
-      </ul>
-    </div>
-  @endif
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <h5 class="mb-0">Update Progress Tahapan</h5>
+    <a href="{{ route('project.progress.index', $project->id) }}" class="btn btn-secondary btn-sm">Kembali</a>
+  </div>
 
   <div class="card-body">
-    @if($errors->has('tahapan_total'))
-      <div class="alert alert-danger">{{ $errors->first('tahapan_total') }}</div>
+
+    @if(session('error'))
+      <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
-    <form action="{{ route('project.store') }}" method="POST" enctype="multipart/form-data" novalidate>
+    @if($errors->any())
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          @foreach($errors->all() as $err)
+            <li>{{ $err }}</li>
+          @endforeach
+        </ul>
+      </div>
+    @endif
+
+    @php
+      $current = (int) ($phase->progress ?? 0);
+      $remaining = max(0, 100 - $current);
+    @endphp
+
+    <div class="alert alert-info">
+      <div><b>Proyek:</b> {{ $project->nama_proyek ?? '-' }}</div>
+      <div><b>Tahapan:</b> {{ $phase->nama_tahapan ?? '-' }}</div>
+      <div><b>Progress saat ini:</b> <span id="currentProgress">{{ $current }}</span>%</div>
+      <div><b>Maksimal yang bisa ditambahkan:</b> <span id="remainingProgress">{{ $remaining }}</span>%</div>
+    </div>
+
+    <div id="progressAlert" class="alert alert-danger d-none"></div>
+
+    <form action="{{ route('project.progress.store', [$project->id, $phase->id]) }}"
+          method="POST"
+          enctype="multipart/form-data"
+          novalidate>
       @csrf
 
       <div class="form-group">
-        <label>Nama Proyek</label>
-        <input type="text" name="nama_proyek" class="form-control" required value="{{ old('nama_proyek') }}">
-        @error('nama_proyek') <small class="text-danger">{{ $message }}</small> @enderror
+        <label>Tanggal Update</label>
+        <input type="date" name="tanggal_update" class="form-control" required value="{{ old('tanggal_update', now()->toDateString()) }}">
+        @error('tanggal_update') <small class="text-danger">{{ $message }}</small> @enderror
       </div>
 
       <div class="form-group mt-3">
-        <label>Client</label>
-        <select name="client_id" class="form-control" required>
-          <option value="">-- pilih client --</option>
-          @foreach($clients as $c)
-            <option value="{{ $c->id }}" {{ old('client_id')==$c->id?'selected':'' }}>
-              {{ $c->nama }}
-            </option>
-          @endforeach
-        </select>
-        @error('client_id') <small class="text-danger">{{ $message }}</small> @enderror
-      </div>
-
-      <div class="row mt-3">
-        <div class="col-md-6">
-          <label>Tanggal Mulai</label>
-          <input type="date" name="tanggal_mulai" class="form-control" required value="{{ old('tanggal_mulai') }}">
-          @error('tanggal_mulai') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-        <div class="col-md-6">
-          <label>Tanggal Selesai</label>
-          <input type="date" name="tanggal_selesai" class="form-control" required value="{{ old('tanggal_selesai') }}">
-          @error('tanggal_selesai') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
+        <label>Tambah Progress (%)</label>
+        <input type="number"
+               id="progressInput"
+               name="progress"
+               class="form-control"
+               min="1"
+               max="{{ $remaining }}"
+               required
+               value="{{ old('progress') }}">
+        <small class="text-muted">
+          Isi progress sebagai <b>tambahan</b> (delta). Max otomatis = sisa sampai 100%.
+        </small>
+        @error('progress') <small class="text-danger d-block">{{ $message }}</small> @enderror
       </div>
 
       <div class="form-group mt-3">
-        <label>Upload Dokumen (opsional)</label>
-        <input type="file" name="dokumen" class="form-control">
-        @error('dokumen') <small class="text-danger">{{ $message }}</small> @enderror
-      </div>
-
-      <div class="form-group mt-3">
-        <label>Upload RAB (PDF / Excel) (opsional)</label>
-        <input type="file" name="rab" class="form-control"
-              accept="application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-        @error('rab') <small class="text-danger">{{ $message }}</small> @enderror
+        <label>Catatan (opsional)</label>
+        <textarea name="catatan" class="form-control" rows="3">{{ old('catatan') }}</textarea>
+        @error('catatan') <small class="text-danger">{{ $message }}</small> @enderror
       </div>
 
       <hr>
-      <div id="tahapanAlert" class="alert alert-danger d-none"></div>
+
+      <div class="form-group">
+        <label>Pilih SDM (opsional)</label>
+        <select name="sdm_ids[]" class="form-control" multiple>
+          @foreach($sdms as $s)
+            <option value="{{ $s->id }}"
+              {{ (collect(old('sdm_ids', []))->contains($s->id)) ? 'selected' : '' }}>
+              {{ $s->nama }}
+            </option>
+          @endforeach
+        </select>
+        <small class="text-muted">Boleh pilih lebih dari 1.</small>
+        @error('sdm_ids') <small class="text-danger d-block">{{ $message }}</small> @enderror
+        @error('sdm_ids.*') <small class="text-danger d-block">{{ $message }}</small> @enderror
+      </div>
+
+      <hr>
+
       <div class="d-flex align-items-center justify-content-between">
-        <h6 class="mb-0">Tahapan Proyek (Total harus 100%)</h6>
-        <span class="badge badge-info" id="totalBadge">Total: 0%</span>
+        <h6 class="mb-0">Pemakaian Material (opsional)</h6>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addMaterialRow()">+ Tambah Baris</button>
       </div>
 
-      <div id="tahapanWrap" class="mt-3">
-        <div class="row tahapan-row">
-          <div class="col-md-7">
-            <label>Nama Tahapan</label>
-            <input type="text" name="tahapan[0][nama_tahapan]" class="form-control" required value="{{ old('tahapan.0.nama_tahapan') }}">
+      <div id="materialsWrap" class="mt-3">
+        @php
+          $oldMaterials = old('materials', []);
+          if (empty($oldMaterials)) $oldMaterials = [[]];
+        @endphp
+
+        @foreach($oldMaterials as $i => $row)
+          <div class="row material-row mb-2">
+            <div class="col-md-7">
+              <label>Material</label>
+              <select name="materials[{{ $i }}][project_material_id]" class="form-control">
+                <option value="">-- pilih material --</option>
+                @foreach($projectMaterials as $pm)
+                  <option value="{{ $pm->id }}"
+                    {{ (string)($row['project_material_id'] ?? '') === (string)$pm->id ? 'selected' : '' }}>
+                    {{ $pm->nama_material }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label>Qty Pakai</label>
+              <input type="number" step="0.01" min="0"
+                     name="materials[{{ $i }}][qty_pakai]"
+                     class="form-control"
+                     value="{{ $row['qty_pakai'] ?? '' }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="btn btn-danger btn-block" onclick="removeMaterialRow(this)">Hapus</button>
+            </div>
           </div>
-          <div class="col-md-3">
-            <label>%</label>
-            <input type="number" name="tahapan[0][persen]" class="form-control persen-input" min="0" max="100" value="{{ old('tahapan.0.persen', 0) }}" required>
-          </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button type="button" class="btn btn-danger btn-block" onclick="removeRow(this)">Hapus</button>
-          </div>
-        </div>
+        @endforeach
       </div>
 
-      <button type="button" class="btn btn-secondary mt-3" onclick="addTahapan()">+ Tambah Tahapan</button>
+      @error('materials') <small class="text-danger d-block">{{ $message }}</small> @enderror
+      @error('materials.*.project_material_id') <small class="text-danger d-block">{{ $message }}</small> @enderror
+      @error('materials.*.qty_pakai') <small class="text-danger d-block">{{ $message }}</small> @enderror
 
-      <div class="mt-4">
-        <button class="btn btn-maroon" onclick="return confirmSubmit()">Simpan</button>
-        <a href="{{ route('project.index') }}" class="btn btn-secondary">Kembali</a>
+      <hr>
+
+      <div class="form-group">
+        <label>Upload Foto Progress (opsional, bisa lebih dari 1)</label>
+        <input type="file" name="foto[]" class="form-control" multiple accept="image/png,image/jpeg,image/jpg">
+        @error('foto') <small class="text-danger d-block">{{ $message }}</small> @enderror
+        @error('foto.*') <small class="text-danger d-block">{{ $message }}</small> @enderror
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" id="submitBtn" class="btn btn-maroon">Simpan</button>
+        <a href="{{ route('project.progress.index', $project->id) }}" class="btn btn-secondary">Batal</a>
       </div>
     </form>
   </div>
 </div>
 
 <script>
-let idx = 1;
+let materialIdx = document.querySelectorAll('#materialsWrap .material-row').length;
 
-function calcTotal() {
-  let total = 0;
-  document.querySelectorAll('.persen-input').forEach(el => {
-    const val = parseInt(el.value || '0', 10);
-    total += isNaN(val) ? 0 : val;
-  });
-  document.getElementById('totalBadge').innerText = 'Total: ' + total + '%';
-  return total;
-}
-
-document.addEventListener('input', function(e){
-  if (e.target.classList.contains('persen-input')) calcTotal();
-});
-
-function addTahapan() {
-  const wrap = document.getElementById('tahapanWrap');
+function addMaterialRow() {
+  const wrap = document.getElementById('materialsWrap');
   const html = `
-    <div class="row tahapan-row mt-2">
+    <div class="row material-row mb-2">
       <div class="col-md-7">
-        <label>Nama Tahapan</label>
-        <input type="text" name="tahapan[${idx}][nama_tahapan]" class="form-control" required>
+        <label>Material</label>
+        <select name="materials[${materialIdx}][project_material_id]" class="form-control">
+          <option value="">-- pilih material --</option>
+          @foreach($projectMaterials as $pm)
+            <option value="{{ $pm->id }}">{{ $pm->nama_material }}</option>
+          @endforeach
+        </select>
       </div>
       <div class="col-md-3">
-        <label>%</label>
-        <input type="number" name="tahapan[${idx}][persen]" class="form-control persen-input" min="0" max="100" value="0" required>
+        <label>Qty Pakai</label>
+        <input type="number" step="0.01" min="0" name="materials[${materialIdx}][qty_pakai]" class="form-control" value="">
       </div>
       <div class="col-md-2 d-flex align-items-end">
-        <button type="button" class="btn btn-danger btn-block" onclick="removeRow(this)">Hapus</button>
+        <button type="button" class="btn btn-danger btn-block" onclick="removeMaterialRow(this)">Hapus</button>
       </div>
     </div>
   `;
   wrap.insertAdjacentHTML('beforeend', html);
-  idx++;
-  calcTotal();
+  materialIdx++;
 }
 
-function removeRow(btn) {
-  const rows = document.querySelectorAll('.tahapan-row');
+function removeMaterialRow(btn) {
+  const rows = document.querySelectorAll('#materialsWrap .material-row');
   if (rows.length <= 1) return;
-  btn.closest('.tahapan-row').remove();
-  calcTotal();
+  btn.closest('.material-row').remove();
 }
 
-function confirmSubmit() {
-  const total = calcTotal();
-  const alertBox = document.getElementById('tahapanAlert');
+function validateProgress() {
+  const current = parseInt(document.getElementById('currentProgress').innerText || '0', 10);
+  const remaining = parseInt(document.getElementById('remainingProgress').innerText || '0', 10);
 
-  if (alertBox) alertBox.classList.add('d-none');
+  const input = document.getElementById('progressInput');
+  const alertBox = document.getElementById('progressAlert');
+  const submitBtn = document.getElementById('submitBtn');
 
-  if (total !== 100) {
-    if (alertBox) {
-      alertBox.classList.remove('d-none');
-      alertBox.innerText = 'Total persentase tahapan harus 100%. Sekarang: ' + total + '%';
-    }
+  const val = parseInt(input.value || '0', 10);
+
+  alertBox.classList.add('d-none');
+  submitBtn.disabled = false;
+
+  if (remaining <= 0) {
+    alertBox.classList.remove('d-none');
+    alertBox.innerText = 'Tahapan ini sudah 100%, tidak bisa diupdate.';
+    submitBtn.disabled = true;
     return false;
   }
+
+  if (isNaN(val) || val < 1) return true;
+
+  if (val > remaining) {
+    alertBox.classList.remove('d-none');
+    alertBox.innerText = 'Maksimal progress yang bisa ditambahkan: ' + remaining + '%. (Progress saat ini ' + current + '%)';
+    submitBtn.disabled = true;
+    return false;
+  }
+
   return true;
 }
 
-calcTotal();
+document.addEventListener('input', function(e){
+  if (e.target && e.target.id === 'progressInput') validateProgress();
+});
+
+validateProgress();
 </script>
 @endsection
