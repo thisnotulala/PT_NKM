@@ -33,6 +33,7 @@
             <th width="50" class="text-center">No</th>
             <th>Nama</th>
             <th>Email</th>
+            <th>Hak Akses</th>
             <th width="80" class="text-center">Aksi</th>
           </tr>
         </thead>
@@ -43,7 +44,7 @@
             <td class="text-center">{{ $loop->iteration }}</td>
             <td>{{ $u->name }}</td>
             <td>{{ $u->email }}</td>
-
+            <td>{{ ucfirst($u->role) }}</td>
             <td class="text-center">
               <a href="{{ route('user.edit', $u->id) }}"
                  class="btn-action btn-edit"

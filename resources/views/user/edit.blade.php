@@ -51,6 +51,34 @@
           <div class="invalid-feedback">{{ $message }}</div>
         @enderror
       </div>
+      {{-- ROLE / HAK AKSES --}}
+    <div class="mb-3">
+      <label>Hak Akses</label>
+      <select
+        name="role"
+        class="form-control @error('role') is-invalid @enderror"
+        required
+      >
+        <option value="">-- Pilih Hak Akses --</option>
+        <option value="site manager"
+          {{ old('role', $user->role)=='site manager'?'selected':'' }}>
+          Site Manager
+        </option>
+        <option value="administrasi"
+          {{ old('role', $user->role)=='administrasi'?'selected':'' }}>
+          Administrasi
+        </option>
+        <option value="kepala lapangan"
+          {{ old('role', $user->role)=='kepala lapangan'?'selected':'' }}>
+          Kepala Lapangan
+        </option>
+      </select>
+
+      @error('role')
+        <div class="invalid-feedback">{{ $message }}</div>
+      @enderror
+    </div>
+
 
       {{-- PASSWORD BARU --}}
       <div class="mb-3">

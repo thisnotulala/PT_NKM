@@ -24,6 +24,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
+            'role' => 'required|in:site manager,administrasi,kepala lapangan',
             'password' => 'required|min:6|confirmed',
             'password_confirmation' => 'required',
         ], [
@@ -42,11 +43,15 @@ class UserController extends Controller
             'password.min'       => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak sama dengan password.',
             'password_confirmation.required' => 'Konfirmasi password wajib diisi.',
+
+            'role.required' => 'Hak akses wajib dipilih.',
+            'role.in' => 'Hak akses tidak valid.',
         ]);
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'role' => $request->role,
             'password' => Hash::make($request->password),
         ]);
 
@@ -64,6 +69,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'role' => 'required|in:site manager,administrasi,kepala lapangan',
             'password' => 'nullable|min:6|confirmed',
             'password_confirmation' => 'required_with:password',
         ], [
@@ -81,9 +87,12 @@ class UserController extends Controller
             'password.min'       => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak sama dengan password.',
             'password_confirmation.required_with' => 'Konfirmasi password wajib diisi jika mengubah password.',
+
+            'role.required' => 'Hak akses wajib dipilih.',
+            'role.in' => 'Hak akses tidak valid.',
         ]);
 
-        $data = $request->only('name', 'email');
+        $data = $request->only('name', 'email', 'role');
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
