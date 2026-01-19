@@ -79,10 +79,9 @@
     }
 
     table.tbl {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-    }
+    width: 100%;
+    table-layout: fixed;  /* kunci lebar tabel biar tidak melebar */
+  }
     table.tbl th, table.tbl td {
       border: 1px solid #ddd;
       padding: 6px 6px;
@@ -390,6 +389,62 @@
       @endforelse
     </tbody>
   </table>
+
+  {{-- F. EVALUASI MATERIAL vs PENGELUARAN --}}
+  <div class="section">E. Evaluasi Material vs Pengeluaran</div>
+
+  <table class="grid">
+    <tr>
+      <td class="label">Total Estimasi Biaya Material</td>
+      <td>Rp {{ number_format($totalEstimasiNilai, 0, ',', '.') }}</td>
+      <td class="label">Total Realisasi Biaya</td>
+      <td>Rp {{ number_format($totalRealisasiNilai, 0, ',', '.') }}</td>
+    </tr>
+    <tr>
+      <td class="label">Selisih</td>
+      <td colspan="3">
+        Rp {{ number_format($totalRealisasiNilai - $totalEstimasiNilai, 0, ',', '.') }}
+      </td>
+    </tr>
+  </table>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th width="40">No</th>
+        <th>Material</th>
+        <th width="80">Satuan</th>
+        <th width="110">Estimasi</th>
+        <th width="110">Realisasi</th>
+        <th width="130">Harga</th>
+        <th width="150">Estimasi Nilai</th>
+        <th width="150">Realisasi Nilai</th>
+        <th width="120">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      @forelse($materialEvaluations as $m)
+        <tr>
+          <td class="text-center">{{ $loop->iteration }}</td>
+          <td>{{ $m['nama'] }}</td>
+          <td class="text-center">{{ $m['satuan'] ?? '-' }}</td>
+          <td class="text-right">{{ number_format($m['estimasi_qty'], 2) }}</td>
+          <td class="text-right">{{ number_format($m['keluar_qty'], 2) }}</td>
+          <td class="text-right">Rp {{ number_format($m['harga'], 0, ',', '.') }}</td>
+          <td class="text-right">Rp {{ number_format($m['estimasi_nilai'], 0, ',', '.') }}</td>
+          <td class="text-right">Rp {{ number_format($m['realisasi_nilai'], 0, ',', '.') }}</td>
+          <td class="text-center">
+            <span class="badge {{ $m['badge'] }}">{{ $m['status'] }}</span>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="9" class="text-center muted">Tidak ada data material</td>
+        </tr>
+      @endforelse
+    </tbody>
+  </table>
+
 
 
 

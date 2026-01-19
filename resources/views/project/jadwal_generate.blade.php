@@ -23,7 +23,7 @@
 
       <div class="form-group">
         <label>Mode Generate</label>
-        <select name="mode" class="form-control" required>
+        <select name="mode" class="form-control" >
           <option value="replace" {{ old('mode')=='replace'?'selected':'' }}>Replace (hapus jadwal lama, buat ulang)</option>
           <option value="skip" {{ old('mode')=='skip'?'selected':'' }}>Skip (yang sudah ada tidak diubah)</option>
         </select>
@@ -51,9 +51,9 @@
               <input type="number"
                      class="form-control durasi-input"
                      name="durasi[{{ $p['id'] }}]"
-                     min="1"
+                     min="0"
                      value="{{ old('durasi.'.$p['id'], $p['durasi_default']) }}"
-                     required>
+                     >
             </td>
           </tr>
           @endforeach

@@ -7,6 +7,7 @@ use App\Models\ProjectMaterial;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Models\ProjectPhaseSchedule;
+use App\Models\ProjectMaterialOut;
 
 
 class ProjectReportController extends Controller
@@ -39,6 +40,61 @@ class ProjectReportController extends Controller
             ->withSum('stocks as qty_masuk_total', 'qty_masuk')
             ->orderBy('nama_material')
             ->get();
+
+        // =========================
+        // MATERIAL vs PENGELUARAN
+        // =========================
+        $materialEvaluations = [];
+        $totalEstimasiNilai = 0;
+        $totalRealisasiNilai = 0;
+
+        foreach ($materials as $m) {
+            $estimasiQty = (float) ($m->qty_estimasi ?? 0);
+            $harga       = (float) ($m->harga ?? 0);
+            $toleransi   = (float) ($m->toleransi_persen ?? 0);
+
+            // realisasi = stok keluar
+            $keluarQty = ProjectMaterialOut::where('project_id', $project->id)
+                ->where('project_material_id', $m->id)
+                ->sum('qty_keluar');
+
+            $estimasiNilai  = $estimasiQty * $harga;
+            $realisasiNilai = $keluarQty * $harga;
+
+            $totalEstimasiNilai  += $estimasiNilai;
+            $totalRealisasiNilai += $realisasiNilai;
+
+            // batas atas toleransi
+            $batasAtas = $estimasiQty * (1 + ($toleransi / 100));
+
+            // evaluasi status
+            if ($estimasiQty <= 0) {
+                $status = 'Tidak Ada Estimasi';
+                $badge  = 'badge-info';
+            } elseif ($keluarQty > $batasAtas) {
+                $status = 'Melebihi Estimasi';
+                $badge  = 'badge-danger';
+            } elseif ($keluarQty >= $estimasiQty) {
+                $status = 'Sesuai (Habis)';
+                $badge  = 'badge-warning';
+            } else {
+                $status = 'Sesuai';
+                $badge  = 'badge-success';
+            }
+
+            $materialEvaluations[] = [
+                'nama'            => $m->nama_material,
+                'satuan'          => $m->satuan,
+                'estimasi_qty'    => $estimasiQty,
+                'keluar_qty'      => $keluarQty,
+                'harga'           => $harga,
+                'estimasi_nilai'  => $estimasiNilai,
+                'realisasi_nilai' => $realisasiNilai,
+                'status'          => $status,
+                'badge'           => $badge,
+            ];
+        }
+
 
         // =========================
         // JADWAL vs PROGRESS REAL
@@ -182,7 +238,11 @@ class ProjectReportController extends Controller
             'progressTotalReal',
             'selisihTotal',
             'evaluasiJadwal',
-            'badgeJadwal'
+            'badgeJadwal',
+
+            'materialEvaluations',
+            'totalEstimasiNilai',
+            'totalRealisasiNilai',
         ))->setPaper('A4', 'landscape');
 
         return $pdf->download('Laporan-Proyek-' . $project->nama_proyek . '.pdf');
