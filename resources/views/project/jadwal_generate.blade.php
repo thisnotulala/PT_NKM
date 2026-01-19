@@ -49,11 +49,13 @@
             <td class="text-center">{{ $p['persen'] }}%</td>
             <td>
               <input type="number"
-                     class="form-control durasi-input"
-                     name="durasi[{{ $p['id'] }}]"
-                     min="0"
-                     value="{{ old('durasi.'.$p['id'], $p['durasi_default']) }}"
-                     >
+                class="form-control durasi-input"
+                name="durasi[{{ $p['id'] }}]"
+                min="1"
+                required
+                value="{{ old('durasi.'.$p['id'], $p['durasi_default']) }}"
+              >
+
             </td>
           </tr>
           @endforeach

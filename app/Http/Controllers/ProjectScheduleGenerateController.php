@@ -61,78 +61,127 @@ class ProjectScheduleGenerateController extends Controller
             $q->orderBy('urutan');
         }]);
 
+        // validasi kalau tanggal proyek belum bener
+        if (empty($project->tanggal_mulai) || empty($project->tanggal_selesai)) {
+            return back()->withErrors(['durasi' => 'Tanggal mulai/selesai proyek belum diisi.'])->withInput();
+        }
+
+        // total hari proyek (inklusif)
         $totalHari = (int) (date_diff(
             date_create($project->tanggal_mulai),
             date_create($project->tanggal_selesai)
         )->days + 1);
 
+        if ($totalHari <= 0) {
+            return back()->withErrors(['durasi' => 'Rentang tanggal proyek tidak valid.'])->withInput();
+        }
+
         $data = $request->validate([
             'mode' => 'required|in:replace,skip',
             'durasi' => 'required|array|min:1',
             'durasi.*' => 'required|integer|min:1',
+        ], [
+            'mode.required' => 'Mode generate wajib dipilih.',
+            'mode.in'       => 'Mode generate tidak valid.',
+
+            'durasi.required' => 'Durasi per tahapan wajib diisi.',
+            'durasi.array'    => 'Format durasi tidak valid.',
+            'durasi.min'      => 'Minimal harus ada 1 tahapan yang diisi.',
+
+            'durasi.*.required' => 'Durasi tiap tahapan wajib diisi.',
+            'durasi.*.integer'  => 'Durasi harus berupa angka bulat.',
+            'durasi.*.min'      => 'Durasi minimal 1 hari.',
         ]);
 
-        // pastikan semua phase ada di request
+        // ✅ pastikan semua phase proyek ada di request (anti manipulasi form)
         foreach ($project->phases as $ph) {
-            if (!isset($data['durasi'][$ph->id])) {
-                return back()->withInput()->withErrors(['durasi' => 'Durasi ada yang belum diisi.']);
+            if (!array_key_exists($ph->id, $data['durasi'])) {
+                return back()->withInput()->withErrors([
+                    'durasi' => 'Durasi ada yang belum diisi (semua tahapan wajib diisi).'
+                ]);
             }
         }
 
-        $totalInput = array_sum($data['durasi']);
+        // ✅ pastikan tidak ada phase asing yang dikirim user
+        $validPhaseIds = $project->phases->pluck('id')->toArray();
+        foreach (array_keys($data['durasi']) as $phaseId) {
+            if (!in_array((int)$phaseId, $validPhaseIds)) {
+                return back()->withInput()->withErrors([
+                    'durasi' => 'Ada tahapan tidak valid (terdeteksi manipulasi data).'
+                ]);
+            }
+        }
+
+        // ✅ validasi total durasi tidak boleh > total hari proyek
+        $totalInput = array_sum(array_map('intval', $data['durasi']));
         if ($totalInput > $totalHari) {
             return back()->withInput()->withErrors([
                 'durasi' => "Total durasi tahapan ({$totalInput} hari) melebihi durasi proyek ({$totalHari} hari)."
             ]);
         }
 
-        DB::transaction(function() use ($project, $data) {
-            if ($data['mode'] === 'replace') {
-                ProjectPhaseSchedule::where('project_id', $project->id)->delete();
-            }
+        // ✅ (opsional) jangan terlalu kecil, biar jadwal tidak bolong.
+        // kalau kamu MAU wajib pas = totalHari, aktifkan ini:
+        // if ($totalInput !== $totalHari) {
+        //     return back()->withInput()->withErrors([
+        //         'durasi' => "Total durasi tahapan harus tepat {$totalHari} hari. Saat ini: {$totalInput} hari."
+        //     ]);
+        // }
 
-            $current = $project->tanggal_mulai;
+        try {
+            DB::transaction(function() use ($project, $data) {
 
-            foreach ($project->phases as $ph) {
-                $dur = (int) $data['durasi'][$ph->id];
-
-                // kalau mode skip dan jadwal sudah ada -> lewati, tapi current tetap maju sesuai jadwal existing
-                $existing = ProjectPhaseSchedule::where('project_id', $project->id)
-                    ->where('project_phase_id', $ph->id)
-                    ->first();
-
-                if ($data['mode'] === 'skip' && $existing) {
-                    // majukan current berdasarkan tanggal_selesai existing + 1
-                    $current = date('Y-m-d', strtotime($existing->tanggal_selesai . ' +1 day'));
-                    continue;
+                if ($data['mode'] === 'replace') {
+                    ProjectPhaseSchedule::where('project_id', $project->id)->delete();
                 }
 
-                $mulai = $current;
-                $selesai = date('Y-m-d', strtotime($mulai . ' + ' . ($dur - 1) . ' days'));
+                $current = $project->tanggal_mulai;
 
-                // clamp: jangan lewat tanggal selesai proyek
-                if ($selesai > $project->tanggal_selesai) {
-                    $selesai = $project->tanggal_selesai;
-                    // update durasi sesuai clamp
-                    $dur = (int)(date_diff(date_create($mulai), date_create($selesai))->days + 1);
+                foreach ($project->phases as $ph) {
+                    $dur = (int) $data['durasi'][$ph->id];
+
+                    // mode skip: kalau sudah ada jadwal, lewati tapi current maju sesuai jadwal existing
+                    $existing = ProjectPhaseSchedule::where('project_id', $project->id)
+                        ->where('project_phase_id', $ph->id)
+                        ->first();
+
+                    if ($data['mode'] === 'skip' && $existing) {
+                        $current = date('Y-m-d', strtotime($existing->tanggal_selesai . ' +1 day'));
+                        continue;
+                    }
+
+                    $mulai = $current;
+                    $selesai = date('Y-m-d', strtotime($mulai . ' + ' . ($dur - 1) . ' days'));
+
+                    // clamp: jangan lewat tanggal selesai proyek
+                    if ($selesai > $project->tanggal_selesai) {
+                        // kalau sampai sini berarti totalInput <= totalHari tapi jadwal bisa “melewati”
+                        // biasanya karena mode skip dan existing jadwal memakan hari terlalu banyak
+                        throw new \Exception("Jadwal melewati tanggal selesai proyek karena ada jadwal existing (mode SKIP). Coba pakai mode REPLACE.");
+                    }
+
+                    ProjectPhaseSchedule::updateOrCreate(
+                        [
+                            'project_id' => $project->id,
+                            'project_phase_id' => $ph->id,
+                        ],
+                        [
+                            'tanggal_mulai' => $mulai,
+                            'tanggal_selesai' => $selesai,
+                            'durasi_hari' => $dur,
+                        ]
+                    );
+
+                    $current = date('Y-m-d', strtotime($selesai . ' +1 day'));
                 }
-
-                ProjectPhaseSchedule::updateOrCreate(
-                    [
-                        'project_id' => $project->id,
-                        'project_phase_id' => $ph->id,
-                    ],
-                    [
-                        'tanggal_mulai' => $mulai,
-                        'tanggal_selesai' => $selesai,
-                        'durasi_hari' => $dur,
-                    ]
-                );
-
-                $current = date('Y-m-d', strtotime($selesai . ' +1 day'));
-            }
-        });
+            });
+        } catch (\Throwable $e) {
+            return back()->withInput()->withErrors([
+                'durasi' => $e->getMessage()
+            ]);
+        }
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal otomatis berhasil dibuat.');
     }
+
 }
